@@ -1,9 +1,15 @@
 .DS_Store
 Thumbs.db
 *.swp
+
 *backup*
 *.zip
 config-local.js
+
+test-match.html
+verify-*.sql
+*-test-buyer-*.sql
+
 .env
 .env.local
 node_modules/

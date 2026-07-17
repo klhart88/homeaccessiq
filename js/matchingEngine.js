@@ -96,25 +96,45 @@ async function fetchRulesForProgram(programId) {
   return data;
 }
 
-// Looks up a threshold value keyed by geography. household_size
-// is optional -- some lookup tables don't vary by it, in which
-// case pass null and rows with a null household_size will match.
+// Looks up a threshold value keyed by geography. Two separate
+// queries rather than an embedded-join filter (geo_lookup_tables
+// !inner(...).eq('geo_lookup_tables.table_name', ...)) -- that
+// version didn't actually fix the IHCDA lookup in testing, and
+// this is simpler to reason about and debug than trying to get
+// PostgREST's embedded-resource filter syntax exactly right.
 async function fetchGeoLookupValue(tableName, stateCode, countyFips, householdSize) {
-  let query = supabaseClient
-    .from('geo_lookup_values')
-    .select('numeric_value, geo_lookup_tables!inner(table_name)')
-    .eq('geo_lookup_tables.table_name', tableName)
-    .eq('state_code', stateCode);
+  const { data: tableRow, error: tableError } = await supabaseClient
+    .from('geo_lookup_tables')
+    .select('id')
+    .eq('table_name', tableName)
+    .maybeSingle();
 
-  if (countyFips) query = query.eq('county_fips', countyFips);
-  if (householdSize) query = query.eq('household_size', householdSize);
-
-  const { data, error } = await query.maybeSingle();
-  if (error) {
-    console.warn(`Geo lookup failed for ${tableName}/${stateCode}:`, error);
+  if (tableError || !tableRow) {
+    console.warn(`Geo lookup table not found: ${tableName}`, tableError);
     return null;
   }
-  return data ? data.numeric_value : null;
+
+  const { data, error } = await supabaseClient
+    .from('geo_lookup_values')
+    .select('numeric_value, county_fips, household_size')
+    .eq('lookup_table_id', tableRow.id)
+    .eq('state_code', stateCode);
+
+  if (error) {
+    console.warn(`Geo lookup values query failed for ${tableName}/${stateCode}:`, error);
+    return null;
+  }
+  if (!data || data.length === 0) return null;
+
+  const countyMatches = countyFips ? data.filter(r => r.county_fips === countyFips) : [];
+  const candidates = countyMatches.length > 0 ? countyMatches : data.filter(r => r.county_fips == null);
+  if (candidates.length === 0) return null;
+
+  const exact = householdSize ? candidates.find(r => r.household_size === householdSize) : null;
+  if (exact) return exact.numeric_value;
+
+  const universal = candidates.find(r => r.household_size == null);
+  return universal ? universal.numeric_value : null;
 }
 
 // ---------- Rule evaluation ----------
@@ -150,6 +170,16 @@ async function evaluateRules(rules, buyerProfile) {
   }
 
   for (const rule of rules) {
+    // Rules that exist purely to conditionally exempt another rule
+    // (e.g. "is veteran" waiving "first-time buyer") are not
+    // themselves requirements -- if the buyer isn't a veteran, that
+    // just means no exemption is granted, not that the buyer failed
+    // a "must be a veteran" rule. Discovered via the first real
+    // smoke test: these rows were wrongly showing up as unmet
+    // reasons (e.g. "Requires veteran" on a program that doesn't
+    // actually require it).
+    if (rule.exempts_rule_id) continue;
+
     const result = ruleResults.get(rule.id);
     if (result.needsVerification) {
       needsVerification.push(`${rule.rule_type}: ${result.needsVerification}`);
@@ -225,14 +255,28 @@ function evaluateGeographicScope(config, buyer) {
     };
   }
 
-  const buyerValue = {
-    state: buyer.purchase_state,
-    county: buyer.purchase_county_fips,
-    city: buyer.purchase_city
-  }[config.scope_level];
+  // location_field defaults to 'purchase' (the common case: state/county/city
+  // administering the program cares where the home is). Some programs
+  // (e.g. Miami-Dade's own county DPA) instead require CURRENT residency
+  // in the county at time of application -- discovered curating real data,
+  // not anticipated in the original rule shape.
+  const locationField = config.location_field || 'purchase';
+
+  const buyerValue = locationField === 'residence'
+    ? {
+        state: buyer.residence_state,
+        county: buyer.residence_county_fips,
+        city: null // residence city isn't captured on buyer_profiles yet
+      }[config.scope_level]
+    : {
+        state: buyer.purchase_state,
+        county: buyer.purchase_county_fips,
+        city: buyer.purchase_city
+      }[config.scope_level];
 
   const passed = (config.allowed_values || []).includes(buyerValue);
-  return { passed, reason: passed ? null : `Purchase location outside program's ${config.scope_level} scope` };
+  const locationLabel = locationField === 'residence' ? 'residence' : 'purchase location';
+  return { passed, reason: passed ? null : `${locationLabel} outside program's ${config.scope_level} scope` };
 }
 
 async function evaluateIncomeThreshold(config, buyer) {
@@ -292,6 +336,22 @@ async function evaluateFinancialUnderwriting(config, buyer) {
 function evaluateEmployerCriteria(config, buyer) {
   if (!buyer.employer_name) {
     return { passed: false, reason: 'No employer on file' };
+  }
+
+  // employer_name_match: for single-employer programs (e.g. UK's EAHP --
+  // must work for that specific university, not just any KY-based
+  // employer). Discovered curating real data -- Hometown Heroes-style
+  // "any employer in the state" programs don't need this, but
+  // employer-specific ones do. Simple case-insensitive substring match;
+  // fine for a handful of curated employers, would need a proper
+  // employer registry if this scales to dozens.
+  if (config.employer_name_match) {
+    const matches = config.employer_name_match.some(
+      name => buyer.employer_name.toLowerCase().includes(name.toLowerCase())
+    );
+    if (!matches) {
+      return { passed: false, reason: `Employer must be ${config.employer_name_match.join(' or ')}` };
+    }
   }
 
   if (config.employer_location_required === 'same_state' && buyer.employer_state !== buyer.purchase_state) {
