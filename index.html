@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeAccessIQ — Find homebuyer assistance programs</title>
+  <meta name="description" content="Find down payment assistance and homebuyer programs you may qualify for, across multiple states.">
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- EmailJS SDK (lead-capture notifications only — see js/leadCapture.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1>HomeAccessIQ</h1>
+    <p>Find homebuyer assistance programs you may qualify for.</p>
+  </header>
+
+  <main id="app-root">
+    <!--
+      Scaffolding stage: buyer intake form and match results
+      are not yet built here. This is intentionally a shell —
+      next phase wires up:
+        1. Buyer intake form (two location fields, income,
+           occupation, veteran/disability status)
+        2. Matching engine call against program_eligibility_rules
+        3. Match results rendering
+        4. Lead capture CTA (via js/leadCapture.js)
+    -->
+    <p>Coming soon.</p>
+  </main>
+
+  <script type="module" src="js/supabaseClient.js"></script>
+  <script type="module" src="js/config.js"></script>
+
+</body>
+</html>

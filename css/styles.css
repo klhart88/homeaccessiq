@@ -1,0 +1,15 @@
+/* HomeAccessIQ — starter stylesheet.
+   Placeholder only — real design pass happens once the
+   buyer intake form and match results UI are built. */
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  color: #1a1a1a;
+}
+
+header h1 {
+  margin-bottom: 0.25rem;
+}
