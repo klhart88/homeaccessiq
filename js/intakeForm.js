@@ -92,6 +92,7 @@ export async function saveBuyerProfile(formData, locations) {
     purchase_state: locations.purchase.state,
     purchase_county_fips: locations.purchase.countyFips,
     purchase_city: locations.purchase.city,
+    purchase_census_tract: locations.purchase.censusTract,
 
     household_income: formData.householdIncome || null,
     borrower_only_income: formData.borrowerOnlyIncome || null,

@@ -302,6 +302,89 @@ function evaluateGeographicScope(config, buyer) {
   return { passed, reason: passed ? null : `${locationLabel} outside program's ${config.scope_level} scope` };
 }
 
+// ---------- Targeted-census-tract caveat (shared) ----------
+//
+// A handful of IHCDA counties (17, as of the 2025-04-21 limits)
+// have a HIGHER income limit / acquisition cap when the purchase
+// is in a specific targeted census tract -- distinct from the 30
+// counties where the ENTIRE county is targeted (handled via the
+// geographic_scope exemption pattern elsewhere in this file).
+//
+// The tract list backing this determination is sourced from an
+// IHCDA document last updated 2020 -- five years before the
+// income limits it's meant to support -- and is confirmed
+// incomplete (Hancock County has a targeted tract per the current
+// limits but zero tracts in that 2020 document). Because of that,
+// this deliberately NEVER computes a pass/fail using tract data --
+// it always returns a needsVerification caveat, but the message
+// itself states what the likely determination is, so it's still
+// informative rather than a generic stub. Once the tract list is
+// confirmed current with IHCDA, this can be simplified to compute
+// pass/fail directly.
+async function countyHasTargetedProgram(tableName, stateCode, countyFips) {
+  const { data: tableRow } = await supabaseClient
+    .from('geo_lookup_tables')
+    .select('id')
+    .eq('table_name', tableName)
+    .maybeSingle();
+  if (!tableRow) return false;
+
+  const { data } = await supabaseClient
+    .from('geo_lookup_values')
+    .select('id')
+    .eq('lookup_table_id', tableRow.id)
+    .eq('state_code', stateCode)
+    .eq('county_fips', countyFips)
+    .limit(1);
+  return (data || []).length > 0;
+}
+
+async function countyHasTractInventory(stateCode, countyFips) {
+  const { data } = await supabaseClient
+    .from('targeted_census_tracts')
+    .select('id')
+    .eq('state_code', stateCode)
+    .eq('county_fips', countyFips)
+    .limit(1);
+  return (data || []).length > 0;
+}
+
+async function isTractListedAsTargeted(stateCode, tractGeoid) {
+  const { data } = await supabaseClient
+    .from('targeted_census_tracts')
+    .select('tract_geoid')
+    .eq('state_code', stateCode)
+    .eq('tract_geoid', tractGeoid)
+    .maybeSingle();
+  return !!data;
+}
+
+async function targetedTractCaveat(config, buyer, valueLabel) {
+  if (!config.targeted_lookup_table) return null; // not a tract-targeted rule
+
+  const hasProgram = await countyHasTargetedProgram(
+    config.targeted_lookup_table, buyer.purchase_state, buyer.purchase_county_fips
+  );
+  if (!hasProgram) return null; // not one of the 17 counties -- proceed normally
+
+  const sourceNote = config.targeted_tract_source_url
+    ? ` (IHCDA's tract list: ${config.targeted_tract_source_url}, last updated 2020)`
+    : '';
+
+  if (!buyer.purchase_census_tract) {
+    return `This county has a higher ${valueLabel} for purchases in a targeted census tract, but no census tract is on file for this address -- cannot determine which limit applies. Verify with IHCDA${sourceNote}.`;
+  }
+
+  const hasInventory = await countyHasTractInventory(buyer.purchase_state, buyer.purchase_county_fips);
+  if (!hasInventory) {
+    return `This county has a targeted census tract per IHCDA's current program, but HomeAccessIQ has no tract boundary data on file for it -- verify targeted-area status directly with IHCDA${sourceNote}.`;
+  }
+
+  const isListed = await isTractListedAsTargeted(buyer.purchase_state, buyer.purchase_census_tract);
+  const likely = isListed ? 'appears to be' : 'does not appear to be';
+  return `This address ${likely} in a targeted census tract based on IHCDA's tract list, which has not been confirmed current (last updated 2020, five years before the applicable limits). Verify targeted-area status directly with IHCDA before relying on the ${valueLabel} shown${sourceNote}.`;
+}
+
 async function evaluateIncomeThreshold(config, buyer) {
   const buyerIncome = config.income_basis === 'borrower_only'
     ? buyer.borrower_only_income
@@ -309,6 +392,11 @@ async function evaluateIncomeThreshold(config, buyer) {
 
   if (buyerIncome == null) {
     return { passed: false, needsVerification: `Missing ${config.income_basis} income on buyer profile` };
+  }
+
+  const tractCaveat = await targetedTractCaveat(config, buyer, 'income limit');
+  if (tractCaveat) {
+    return { passed: false, needsVerification: tractCaveat };
   }
 
   const limit = await fetchGeoLookupValue(
@@ -333,6 +421,10 @@ async function evaluateFinancialUnderwriting(config, buyer) {
     }
     if (!config.lookup_table) {
       return { passed: false, reason: 'Program rule missing lookup_table for purchase_price_cap' };
+    }
+    const tractCaveat = await targetedTractCaveat(config, buyer, 'acquisition/purchase-price cap');
+    if (tractCaveat) {
+      return { passed: false, needsVerification: tractCaveat };
     }
     const cap = await fetchGeoLookupValue(config.lookup_table, buyer.purchase_state, buyer.purchase_county_fips, null);
     if (cap == null) {
