@@ -1,0 +1,108 @@
+/* HomeAccessIQ -- intake page styles */
+
+.tagline {
+  color: #555;
+  font-style: italic;
+  margin-top: 0;
+}
+
+.step {
+  display: none;
+}
+.step.active {
+  display: block;
+}
+
+fieldset {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+}
+legend {
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+label input, label select, label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+label input::placeholder, label textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.checkbox-label input {
+  width: auto;
+  margin: 0;
+}
+
+.required {
+  color: #c0392b;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background: #1a5f3f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:hover {
+  background: #144a32;
+}
+
+.error-text {
+  color: #c0392b;
+  min-height: 1.2em;
+}
+.success-text {
+  color: #1a5f3f;
+  min-height: 1.2em;
+}
+
+.result-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.result-card.match {
+  border-color: #1a5f3f;
+  background: #f0f8f4;
+}
+.result-card.no-match {
+  opacity: 0.75;
+}
+.unmet-reasons {
+  color: #888;
+  font-size: 0.85rem;
+}
+.needs-verification {
+  color: #b8860b;
+  font-size: 0.85rem;
+}
+
+.followup-box {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: #f7f7f7;
+  border-radius: 6px;
+}

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeAccessIQ -- Find Your Homebuyer Programs</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/intake.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1>HomeAccessIQ</h1>
+    <p class="tagline">Uncover funding opportunities and buyer advantages for homeownership with confidence and clarity</p>
+  </header>
+
+  <main id="app-root">
+
+    <!-- STEP 1: email entry (passwordless sign-in -- Supabase OTP
+         is the entire access mechanism, no external gate) -->
+    <section id="step-email" class="step active">
+      <h2>Let's get started</h2>
+      <p>Enter your email and we'll send you a one-time code.</p>
+      <label>Email address
+        <input type="email" id="email-input" autocomplete="email" required>
+      </label>
+      <button id="send-code-btn">Send Code</button>
+      <p class="error-text" id="email-error"></p>
+    </section>
+
+    <!-- STEP 2: enter the code -->
+    <section id="step-otp" class="step">
+      <h2>Check your email</h2>
+      <p id="otp-message">Enter the 6-digit code we just sent you.</p>
+      <label>Code
+        <input type="text" id="otp-input" inputmode="numeric" maxlength="12" autocomplete="one-time-code" required>
+      </label>
+      <button id="verify-code-btn">Verify</button>
+      <p class="error-text" id="otp-error"></p>
+    </section>
+
+    <!-- STEP 3: profile intake -->
+    <section id="step-profile" class="step">
+      <h2>Tell us about your home search</h2>
+
+      <fieldset>
+        <legend>Where are you buying?</legend>
+        <label>Purchase address, city, or ZIP <span class="required">*</span>
+          <input type="text" id="purchase-address" placeholder="e.g. 123 Main St, Indianapolis, IN" required>
+        </label>
+        <label>Current residence (optional -- some programs require this)
+          <input type="text" id="residence-address" placeholder="Only needed for certain county programs">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Household</legend>
+        <label>Household income ($/year)
+          <input type="text" inputmode="numeric" id="household-income" placeholder="e.g. 75,000">
+        </label>
+        <label>Your income only, if different (some programs count only the borrower)
+          <input type="text" inputmode="numeric" id="borrower-only-income" placeholder="Leave blank if same as household income">
+        </label>
+        <label>Household size
+          <input type="number" id="household-size" min="1" step="1" placeholder="e.g. 2">
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="first-time-buyer" checked>
+          I have not owned a home in the past 3 years
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="veteran-status">
+          I am a veteran or active-duty service member
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="disability-status">
+          I have a qualifying disability
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Occupation (some programs are occupation-specific)</legend>
+        <label>Occupation
+          <select id="occupation-select">
+            <option value="">-- Not applicable / prefer not to say --</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Employer (for employer-assisted programs)</legend>
+        <label>Employer name
+          <input type="text" id="employer-name" placeholder="e.g. University of Kentucky">
+        </label>
+        <label>Employer state
+          <input type="text" id="employer-state" maxlength="2" placeholder="e.g. KY">
+        </label>
+        <label>Hours per week
+          <input type="number" id="employer-hours" min="0" max="80" placeholder="e.g. 40">
+        </label>
+        <label>Employment start date
+          <input type="date" id="employer-start-date">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Financial</legend>
+        <label>Credit score
+          <input type="number" id="credit-score" min="300" max="850" placeholder="e.g. 680 (range: 300-850)">
+        </label>
+        <label>Debt-to-income ratio (%) -- your total monthly debt payments (car, student loans, credit cards, etc.) divided by your gross monthly income
+          <input type="number" id="dti-ratio" min="0" max="100" step="1" placeholder="e.g. 35 for 35%">
+        </label>
+        <label>Target purchase price ($)
+          <input type="text" inputmode="numeric" id="target-price" placeholder="e.g. 250,000">
+        </label>
+      </fieldset>
+
+      <button id="submit-profile-btn">See My Matches</button>
+      <p class="error-text" id="profile-error"></p>
+    </section>
+
+    <!-- STEP 4: results -->
+    <section id="step-results" class="step">
+      <h2>Your Results</h2>
+      <div id="results-list"></div>
+
+      <div class="followup-box">
+        <h3>Want help applying?</h3>
+        <p>Leave your contact info and we'll follow up personally.</p>
+        <label>Your name (optional)
+          <input type="text" id="followup-name" placeholder="e.g. Jamie Smith">
+        </label>
+        <label>Phone (optional)
+          <input type="tel" id="followup-phone" placeholder="e.g. (317) 555-1234">
+        </label>
+        <label>Notes (optional)
+          <textarea id="followup-notes" rows="3"></textarea>
+        </label>
+        <button id="request-followup-btn">Request Follow-Up</button>
+        <p class="success-text" id="followup-success"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module" src="js/intake-controller.js"></script>
+</body>
+</html>

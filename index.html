@@ -3,38 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HomeAccessIQ — Find homebuyer assistance programs</title>
-  <meta name="description" content="Find down payment assistance and homebuyer programs you may qualify for, across multiple states.">
+  <title>HomeAccessIQ -- Find homebuyer assistance programs</title>
+  <meta name="description" content="Uncover funding opportunities and buyer advantages for homeownership with confidence and clarity.">
   <link rel="stylesheet" href="css/styles.css">
-
-  <!-- Supabase JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- EmailJS SDK (lead-capture notifications only — see js/leadCapture.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+  <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
 
-  <header>
+  <header class="landing-header">
     <h1>HomeAccessIQ</h1>
-    <p>Find homebuyer assistance programs you may qualify for.</p>
   </header>
 
-  <main id="app-root">
-    <!--
-      Scaffolding stage: buyer intake form and match results
-      are not yet built here. This is intentionally a shell —
-      next phase wires up:
-        1. Buyer intake form (two location fields, income,
-           occupation, veteran/disability status)
-        2. Matching engine call against program_eligibility_rules
-        3. Match results rendering
-        4. Lead capture CTA (via js/leadCapture.js)
-    -->
-    <p>Coming soon.</p>
-  </main>
+  <main class="landing-hero">
+    <h2>Uncover funding opportunities and buyer advantages for homeownership with confidence and clarity.</h2>
+    <p>
+      Down payment assistance, closing-cost grants, and employer-assisted housing programs
+      exist across state, county, and city lines -- most buyers never find out which ones
+      they actually qualify for. HomeAccessIQ checks your specific situation against real,
+      currently-funded programs and shows you exactly where you stand.
+    </p>
+    <a href="intake.html" class="get-started-btn">Get Started &rarr;</a>
 
-  <script type="module" src="js/supabaseClient.js"></script>
-  <script type="module" src="js/config.js"></script>
+    <div class="how-it-works">
+      <h3>How it works</h3>
+      <ol>
+        <li>Tell us where you're buying and a bit about your household.</li>
+        <li>We check your details against real, currently-funded assistance programs.</li>
+        <li>See exactly what you qualify for -- and request help applying, if you want it.</li>
+      </ol>
+    </div>
+  </main>
 
 </body>
 </html>
