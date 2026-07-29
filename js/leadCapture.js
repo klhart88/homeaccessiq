@@ -39,7 +39,7 @@ if (typeof emailjs !== 'undefined') {
 //
 // contactInfo: { email, name, phone, notes, requestType, sourcePage }
 export async function submitLeadCapture(contactInfo, buyerProfileId = null) {
-  const { data, error } = await supabaseClient
+  const { error } = await supabaseClient
     .from('lead_captures')
     .insert({
       buyer_profile_id: buyerProfileId,
@@ -49,9 +49,15 @@ export async function submitLeadCapture(contactInfo, buyerProfileId = null) {
       notes: contactInfo.notes || null,
       request_type: contactInfo.requestType, // 'results' | 'question'
       source_page: contactInfo.sourcePage || null
-    })
-    .select()
-    .single();
+    });
+  // NOTE: deliberately no .select().single() here -- chaining .select()
+  // after insert asks Supabase to return the inserted row, which is
+  // governed by the SELECT policy on lead_captures (agents only), not
+  // the INSERT policy. A buyer inserting their own request would pass
+  // the insert but then fail trying to read it back, surfacing as a
+  // confusing "row-level security policy" error on what looked like a
+  // successful submission. We don't actually need the row back, so
+  // simplest fix is just not asking for it.
 
   if (error) {
     throw new Error(`Could not save your request: ${error.message}`);
@@ -75,7 +81,7 @@ export async function submitLeadCapture(contactInfo, buyerProfileId = null) {
     }
   }
 
-  return data;
+  return true;
 }
 
 // ---------- Helpers reused conceptually from AreaIQ ----------
