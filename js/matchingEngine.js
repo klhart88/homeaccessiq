@@ -130,8 +130,28 @@ async function fetchGeoLookupValue(tableName, stateCode, countyFips, householdSi
   const candidates = countyMatches.length > 0 ? countyMatches : data.filter(r => r.county_fips == null);
   if (candidates.length === 0) return null;
 
-  const exact = householdSize ? candidates.find(r => r.household_size === householdSize) : null;
-  if (exact) return exact.numeric_value;
+  // Bracket/threshold matching, not exact-match: some sources give a
+  // limit per exact household size (e.g. Miami-Dade: 1, 2, 3, 4), but
+  // others (e.g. IHCDA) give bucketed thresholds instead -- "1-2
+  // person" stored as household_size=2, "3+ person" stored as
+  // household_size=3. Treat stored household_size as a floor: pick
+  // the highest threshold the buyer's household size meets or
+  // exceeds. This also correctly reproduces exact-match behavior for
+  // continuously-sized sources like Miami-Dade, so one code path
+  // covers both shapes of data.
+  if (householdSize) {
+    const sized = candidates.filter(r => r.household_size != null);
+    if (sized.length > 0) {
+      const met = sized
+        .filter(r => r.household_size <= householdSize)
+        .sort((a, b) => b.household_size - a.household_size)[0];
+      if (met) return met.numeric_value;
+      // Buyer's household is smaller than every threshold on file --
+      // fall back to the lowest available bracket rather than fail.
+      const lowest = sized.sort((a, b) => a.household_size - b.household_size)[0];
+      return lowest.numeric_value;
+    }
+  }
 
   const universal = candidates.find(r => r.household_size == null);
   return universal ? universal.numeric_value : null;
@@ -183,6 +203,9 @@ async function evaluateRules(rules, buyerProfile) {
     const result = ruleResults.get(rule.id);
     if (result.needsVerification) {
       needsVerification.push(`${rule.rule_type}: ${result.needsVerification}`);
+      continue; // don't also report this as a hard failure -- "we don't
+                // have enough info" and "you're ineligible" are different
+                // messages and shouldn't both fire for the same rule
     }
     if (!result.passed) {
       unmetReasons.push(result.reason || `${rule.rule_type} not satisfied`);
