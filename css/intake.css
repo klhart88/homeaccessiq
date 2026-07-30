@@ -95,6 +95,10 @@ button:hover {
   border-color: #b8860b;
   background: #fdf8ee;
 }
+.result-card.likely-match {
+  border-color: #b8860b;
+  background: #f5f8f0;
+}
 .results-section-heading {
   margin-top: 2rem;
   font-size: 1.1rem;

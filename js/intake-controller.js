@@ -161,19 +161,33 @@ function renderResults(results) {
   const container = document.getElementById('results-list');
   container.innerHTML = '';
 
-  // Three buckets, not two: a program with any needsVerification
-  // entry is pulled OUT of the clean-match list into its own
-  // section, regardless of isMatch. Decision (Kelvin, 2026-07-30):
-  // needs-verification programs get a separate bucket, away from
-  // clean matches -- a buyer skimming the page shouldn't see a
-  // checkmark on a program whose actual dollar figure isn't
-  // confirmed (e.g. every IHCDA First Step result in one of the 17
-  // targeted-tract counties).
-  const needsReview = results.filter(r => r.needsVerification && r.needsVerification.length > 0);
+  // Four buckets, not three. Kelvin's feedback after live testing
+  // (2026-07-30): a program with core numbers fully cleared but one
+  // detail unconfirmed (e.g. IHCDA First Step, blocked only on
+  // tract-list currency) looked visually identical to a program
+  // that's mostly irrelevant noise (e.g. an out-of-state program
+  // failing on state scope AND missing data) -- both amber, both
+  // starting with "Can't confirm yet." Nothing signaled which one
+  // was actually worth a buyer's time.
+  //
+  // Split: "likely match, pending verification" = isMatch true,
+  // needsVerification present, NO unmetReasons -- the buyer's core
+  // numbers all checked out, only some external detail is
+  // unconfirmed. Ranked directly under clean matches, checkmark
+  // icon (amber, not green, to still signal "not fully confirmed").
+  //
+  // "needs more info" = has BOTH unmetReasons and needsVerification
+  // -- genuinely lower-confidence, kept separate and de-prioritized.
+  const likelyMatches = results.filter(r =>
+    r.isMatch && r.needsVerification && r.needsVerification.length > 0
+  );
+  const needsMoreInfo = results.filter(r =>
+    !r.isMatch && r.needsVerification && r.needsVerification.length > 0
+  );
   const matches = results.filter(r => r.isMatch && (!r.needsVerification || r.needsVerification.length === 0));
   const nonMatches = results.filter(r => !r.isMatch && (!r.needsVerification || r.needsVerification.length === 0));
 
-  if (matches.length === 0 && needsReview.length === 0) {
+  if (matches.length === 0 && likelyMatches.length === 0) {
     const p = document.createElement('p');
     p.textContent = "We didn't find a confirmed match yet, but see the notes below -- some programs need a bit more info from you.";
     container.appendChild(p);
@@ -183,19 +197,35 @@ function renderResults(results) {
     container.appendChild(buildResultCard(r, 'match'));
   }
 
-  if (needsReview.length) {
+  if (likelyMatches.length) {
     const heading = document.createElement('h2');
     heading.className = 'results-section-heading';
-    heading.textContent = 'Possible matches — needs verification';
+    heading.textContent = 'Likely matches — pending verification';
     container.appendChild(heading);
 
     const intro = document.createElement('p');
     intro.className = 'needs-review-intro';
-    intro.textContent = "These programs may apply to you, but we can't fully confirm every detail below without more information. Please verify directly with the program before relying on the figures shown.";
+    intro.textContent = "Your numbers check out for these programs, but at least one detail couldn't be fully confirmed. Worth investigating further -- see the specific open question below.";
     container.appendChild(intro);
 
-    for (const r of needsReview) {
-      container.appendChild(buildResultCard(r, 'needsReview'));
+    for (const r of likelyMatches) {
+      container.appendChild(buildResultCard(r, 'likelyMatch'));
+    }
+  }
+
+  if (needsMoreInfo.length) {
+    const heading = document.createElement('h2');
+    heading.className = 'results-section-heading';
+    heading.textContent = 'Other programs — insufficient information';
+    container.appendChild(heading);
+
+    const intro = document.createElement('p');
+    intro.className = 'needs-review-intro';
+    intro.textContent = "Based on what's on file, these don't currently look like a fit, and some details couldn't be confirmed either. Unlikely to be worth pursuing unless your situation changes.";
+    container.appendChild(intro);
+
+    for (const r of needsMoreInfo) {
+      container.appendChild(buildResultCard(r, 'needsMoreInfo'));
     }
   }
 
@@ -207,11 +237,14 @@ function renderResults(results) {
 function buildResultCard(result, status) {
   const card = document.createElement('div');
   card.className = 'result-card ' + (
-    status === 'match' ? 'match' : status === 'needsReview' ? 'needs-review' : 'no-match'
+    status === 'match' ? 'match' :
+    status === 'likelyMatch' ? 'likely-match' :
+    status === 'needsMoreInfo' ? 'needs-review' : 'no-match'
   );
 
   const title = document.createElement('h3');
-  const icon = status === 'match' ? '\u2713 ' : status === 'needsReview' ? '\u26A0 ' : '';
+  const icon = (status === 'match' || status === 'likelyMatch') ? '\u2713 ' :
+    status === 'needsMoreInfo' ? '\u26A0 ' : '';
   title.textContent = icon + result.program.name;
   card.appendChild(title);
 
@@ -229,7 +262,8 @@ function buildResultCard(result, status) {
   if (result.needsVerification.length) {
     const verify = document.createElement('p');
     verify.className = 'needs-verification';
-    verify.textContent = "Can't confirm yet: " + result.needsVerification.join('; ');
+    const prefix = status === 'likelyMatch' ? 'Pending confirmation: ' : "Can't confirm yet: ";
+    verify.textContent = prefix + result.needsVerification.join('; ');
     card.appendChild(verify);
   }
 
