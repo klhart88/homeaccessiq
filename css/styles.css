@@ -13,3 +13,14 @@ body {
 header h1 {
   margin-bottom: 0.25rem;
 }
+
+.site-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #ddd;
+}
+.site-footer .disclaimer {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #777;
+}
