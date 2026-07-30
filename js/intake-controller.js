@@ -161,36 +161,65 @@ function renderResults(results) {
   const container = document.getElementById('results-list');
   container.innerHTML = '';
 
-  const matches = results.filter(r => r.isMatch);
-  const nonMatches = results.filter(r => !r.isMatch);
+  // Three buckets, not two: a program with any needsVerification
+  // entry is pulled OUT of the clean-match list into its own
+  // section, regardless of isMatch. Decision (Kelvin, 2026-07-30):
+  // needs-verification programs get a separate bucket, away from
+  // clean matches -- a buyer skimming the page shouldn't see a
+  // checkmark on a program whose actual dollar figure isn't
+  // confirmed (e.g. every IHCDA First Step result in one of the 17
+  // targeted-tract counties).
+  const needsReview = results.filter(r => r.needsVerification && r.needsVerification.length > 0);
+  const matches = results.filter(r => r.isMatch && (!r.needsVerification || r.needsVerification.length === 0));
+  const nonMatches = results.filter(r => !r.isMatch && (!r.needsVerification || r.needsVerification.length === 0));
 
-  if (matches.length === 0) {
+  if (matches.length === 0 && needsReview.length === 0) {
     const p = document.createElement('p');
     p.textContent = "We didn't find a confirmed match yet, but see the notes below -- some programs need a bit more info from you.";
     container.appendChild(p);
   }
 
   for (const r of matches) {
-    container.appendChild(buildResultCard(r, true));
+    container.appendChild(buildResultCard(r, 'match'));
   }
+
+  if (needsReview.length) {
+    const heading = document.createElement('h2');
+    heading.className = 'results-section-heading';
+    heading.textContent = 'Possible matches — needs verification';
+    container.appendChild(heading);
+
+    const intro = document.createElement('p');
+    intro.className = 'needs-review-intro';
+    intro.textContent = "These programs may apply to you, but we can't fully confirm every detail below without more information. Please verify directly with the program before relying on the figures shown.";
+    container.appendChild(intro);
+
+    for (const r of needsReview) {
+      container.appendChild(buildResultCard(r, 'needsReview'));
+    }
+  }
+
   for (const r of nonMatches) {
-    container.appendChild(buildResultCard(r, false));
+    container.appendChild(buildResultCard(r, 'noMatch'));
   }
 }
 
-function buildResultCard(result, isMatch) {
+function buildResultCard(result, status) {
   const card = document.createElement('div');
-  card.className = isMatch ? 'result-card match' : 'result-card no-match';
+  card.className = 'result-card ' + (
+    status === 'match' ? 'match' : status === 'needsReview' ? 'needs-review' : 'no-match'
+  );
 
   const title = document.createElement('h3');
-  title.textContent = (isMatch ? '\u2713 ' : '') + result.program.name;
+  const icon = status === 'match' ? '\u2713 ' : status === 'needsReview' ? '\u26A0 ' : '';
+  title.textContent = icon + result.program.name;
   card.appendChild(title);
 
   const desc = document.createElement('p');
   desc.textContent = result.program.description || '';
   card.appendChild(desc);
 
-  if (!isMatch && result.unmetReasons.length) {
+  if (result.unmetReasons.length) {
     const reasons = document.createElement('p');
     reasons.className = 'unmet-reasons';
     reasons.textContent = 'Not currently eligible: ' + result.unmetReasons.join('; ');
@@ -200,7 +229,7 @@ function buildResultCard(result, isMatch) {
   if (result.needsVerification.length) {
     const verify = document.createElement('p');
     verify.className = 'needs-verification';
-    verify.textContent = 'Needs more info: ' + result.needsVerification.join('; ');
+    verify.textContent = "Can't confirm yet: " + result.needsVerification.join('; ');
     card.appendChild(verify);
   }
 

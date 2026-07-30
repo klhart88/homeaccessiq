@@ -304,20 +304,21 @@ function evaluateGeographicScope(config, buyer) {
 
 // ---------- Targeted-census-tract caveat (shared) ----------
 //
-// A handful of IHCDA counties (17, as of the 2025-04-21 limits)
-// have a HIGHER income limit / acquisition cap when the purchase
-// is in a specific targeted census tract -- distinct from the 30
+// A handful of IHCDA counties (17, as of the current limits) have
+// a HIGHER income limit / acquisition cap when the purchase is in
+// a specific targeted census tract -- distinct from the 30
 // counties where the ENTIRE county is targeted (handled via the
 // geographic_scope exemption pattern elsewhere in this file).
 //
-// The tract list backing this determination is sourced from an
-// IHCDA document last updated 2020 -- five years before the
-// income limits it's meant to support -- and is confirmed
-// incomplete (Hancock County has a targeted tract per the current
-// limits but zero tracts in that 2020 document). Because of that,
-// this deliberately NEVER computes a pass/fail using tract data --
-// it always returns a needsVerification caveat, but the message
-// itself states what the likely determination is, so it's still
+// The tract list backing this determination is sourced from IHCDA
+// documents (2020 and 2024, in agreement on all 17 counties'
+// boundaries -- see the 2024-corroboration migration for detail,
+// including how the Hancock County gap in the original 2020-only
+// data was resolved). Not yet formally confirmed with IHCDA
+// directly, so this deliberately NEVER computes a pass/fail using
+// tract data -- it always returns a needsVerification caveat, but
+// the message itself states what the likely determination is, so
+// it's still
 // informative rather than a generic stub. Once the tract list is
 // confirmed current with IHCDA, this can be simplified to compute
 // pass/fail directly.
@@ -368,7 +369,7 @@ async function targetedTractCaveat(config, buyer, valueLabel) {
   if (!hasProgram) return null; // not one of the 17 counties -- proceed normally
 
   const sourceNote = config.targeted_tract_source_url
-    ? ` (IHCDA's tract list: ${config.targeted_tract_source_url}, last updated 2020)`
+    ? ` (IHCDA's tract list: ${config.targeted_tract_source_url})`
     : '';
 
   if (!buyer.purchase_census_tract) {

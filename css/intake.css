@@ -91,6 +91,20 @@ button:hover {
 .result-card.no-match {
   opacity: 0.75;
 }
+.result-card.needs-review {
+  border-color: #b8860b;
+  background: #fdf8ee;
+}
+.results-section-heading {
+  margin-top: 2rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+.needs-review-intro {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
 .unmet-reasons {
   color: #888;
   font-size: 0.85rem;
