@@ -382,7 +382,7 @@ async function targetedTractCaveat(config, buyer, valueLabel) {
 
   const isListed = await isTractListedAsTargeted(buyer.purchase_state, buyer.purchase_census_tract);
   const likely = isListed ? 'appears to be' : 'does not appear to be';
-  return `This address ${likely} in a targeted census tract based on IHCDA's tract list, which has not been confirmed current (last updated 2020, five years before the applicable limits). Verify targeted-area status directly with IHCDA before relying on the ${valueLabel} shown${sourceNote}.`;
+  return `This address ${likely} in a targeted census tract based on IHCDA's tract list. This has not been formally confirmed with IHCDA directly, though two independent IHCDA documents (2020 and 2024) agree on this county's tract boundaries. Verify targeted-area status directly with IHCDA before relying on the ${valueLabel} shown${sourceNote}.`;
 }
 
 async function evaluateIncomeThreshold(config, buyer) {
