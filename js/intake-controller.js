@@ -119,6 +119,10 @@ document.getElementById('submit-profile-btn').addEventListener('click', async ()
     employerState: document.getElementById('employer-state').value.toUpperCase() || null,
     employerHoursPerWeek: numOrNull('employer-hours'),
     employerStartDate: document.getElementById('employer-start-date').value || null,
+    employerPositionType: document.getElementById('employer-position-type').value || null,
+    employerFacultyRank: document.getElementById('employer-faculty-rank').value || null,
+    employerStaffGrade: numOrNull('employer-staff-grade'),
+    employerIsHospitalPosition: document.getElementById('employer-is-hospital').checked,
     creditScore: numOrNull('credit-score'),
     dtiRatio: percentToDecimalOrNull('dti-ratio'),
     targetPurchasePrice: numOrNull('target-price')

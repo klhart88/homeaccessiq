@@ -52,6 +52,12 @@ label input::placeholder, label textarea::placeholder {
   margin: 0;
 }
 
+.hint {
+  font-weight: normal;
+  color: #888;
+  font-size: 0.8rem;
+}
+
 .required {
   color: #c0392b;
 }

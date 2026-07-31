@@ -110,6 +110,10 @@ export async function saveBuyerProfile(formData, locations) {
     employer_state: formData.employerState || null,
     employer_hours_per_week: formData.employerHoursPerWeek || null,
     employer_start_date: formData.employerStartDate || null,
+    employer_position_type: formData.employerPositionType || null,
+    employer_faculty_rank: formData.employerFacultyRank || null,
+    employer_staff_grade: formData.employerStaffGrade || null,
+    employer_is_hospital_position: formData.employerIsHospitalPosition || false,
 
     updated_at: new Date().toISOString()
   };

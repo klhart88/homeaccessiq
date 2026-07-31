@@ -488,12 +488,52 @@ function evaluateEmployerCriteria(config, buyer) {
   }
 
   if (config.min_tenure_days) {
-    if (!buyer.employer_start_date) {
-      return { passed: false, needsVerification: 'Employer start date not on file' };
+    const isExemptFromTenure = (config.tenure_exempt_position_types || [])
+      .includes(buyer.employer_position_type);
+
+    if (!isExemptFromTenure) {
+      if (!buyer.employer_start_date) {
+        return { passed: false, needsVerification: 'Employer start date not on file' };
+      }
+      const tenureDays = Math.floor((Date.now() - new Date(buyer.employer_start_date)) / (1000 * 60 * 60 * 24));
+      if (tenureDays < config.min_tenure_days) {
+        return { passed: false, reason: `Requires ${config.min_tenure_days} days' tenure (has ${tenureDays})` };
+      }
     }
-    const tenureDays = Math.floor((Date.now() - new Date(buyer.employer_start_date)) / (1000 * 60 * 60 * 24));
-    if (tenureDays < config.min_tenure_days) {
-      return { passed: false, reason: `Requires ${config.min_tenure_days} days' tenure (has ${tenureDays})` };
+  }
+
+  // job_tier_requirement: real UK EAHP policy has two separate
+  // eligibility tracks with different rules -- faculty qualify by
+  // RANK (only instructor/assistant professor), staff qualify by a
+  // MAXIMUM grade level (<=46 general, <=10 hospital). This is
+  // deliberately its own structured field rather than reusing the
+  // simpler job_tier_min shape below, since "job tier" here isn't a
+  // single number -- it depends on which track the buyer is on.
+  if (config.job_tier_requirement) {
+    const req = config.job_tier_requirement;
+
+    if (!buyer.employer_position_type) {
+      return { passed: false, needsVerification: 'Faculty/staff position type not on file -- required to confirm job-tier eligibility' };
+    }
+
+    if (buyer.employer_position_type === 'faculty') {
+      if (!buyer.employer_faculty_rank) {
+        return { passed: false, needsVerification: 'Faculty rank not on file -- required to confirm job-tier eligibility' };
+      }
+      const eligible = (req.faculty_ranks_eligible || []).includes(buyer.employer_faculty_rank);
+      if (!eligible) {
+        return { passed: false, reason: `Faculty rank must be one of: ${(req.faculty_ranks_eligible || []).join(', ')}` };
+      }
+    } else if (buyer.employer_position_type === 'staff') {
+      if (buyer.employer_staff_grade == null) {
+        return { passed: false, needsVerification: 'Staff grade level not on file -- required to confirm job-tier eligibility' };
+      }
+      const maxGrade = buyer.employer_is_hospital_position
+        ? req.staff_max_grade_hospital
+        : req.staff_max_grade_general;
+      if (maxGrade != null && buyer.employer_staff_grade > maxGrade) {
+        return { passed: false, reason: `Staff grade must be ${maxGrade} or below (has ${buyer.employer_staff_grade})` };
+      }
     }
   }
 

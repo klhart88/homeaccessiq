@@ -103,6 +103,29 @@
         <label>Employment start date
           <input type="date" id="employer-start-date">
         </label>
+        <label class="field-note">Position type <span class="hint">(only needed for university employer-assisted programs, e.g. UK EAHP)</span>
+          <select id="employer-position-type">
+            <option value="">-- Not applicable --</option>
+            <option value="faculty">Faculty</option>
+            <option value="staff">Staff</option>
+          </select>
+        </label>
+        <label>Faculty rank <span class="hint">(if faculty)</span>
+          <select id="employer-faculty-rank">
+            <option value="">-- N/A --</option>
+            <option value="instructor">Instructor</option>
+            <option value="assistant_professor">Assistant Professor</option>
+            <option value="associate_professor">Associate Professor</option>
+            <option value="professor">Professor</option>
+          </select>
+        </label>
+        <label>Staff grade level <span class="hint">(if staff)</span>
+          <input type="number" id="employer-staff-grade" min="0" placeholder="e.g. 42">
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="employer-is-hospital">
+          This is a hospital/health-system staff position
+        </label>
       </fieldset>
 
       <fieldset>
