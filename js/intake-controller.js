@@ -252,6 +252,17 @@ function buildResultCard(result, status) {
   title.textContent = icon + result.program.name;
   card.appendChild(title);
 
+  // Rate-only programs (e.g. IHCDA Step Down) provide no down
+  // payment assistance at all -- just a below-market interest
+  // rate. Flagged distinctly so it doesn't read like every other
+  // dollar-amount program around it, regardless of match tier.
+  if (result.program.program_type === 'rate_reduction') {
+    const badge = document.createElement('span');
+    badge.className = 'benefit-type-badge';
+    badge.textContent = 'Interest rate discount — no down payment assistance';
+    card.appendChild(badge);
+  }
+
   const desc = document.createElement('p');
   desc.textContent = result.program.description || '';
   card.appendChild(desc);
