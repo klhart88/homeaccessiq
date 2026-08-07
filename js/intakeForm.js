@@ -1,48 +1,24 @@
 // ============================================
 // HomeAccessIQ -- Intake form orchestration
 //
-// Access model (locked): Supabase email OTP is the ONLY access
-// mechanism -- no Cloudflare or other edge-level gate. This is a
-// deliberate open self-serve signup: anyone who reaches the site
-// can request a code and create an account. No password anywhere;
-// the code itself IS the login.
+// Access model: gated by authGuard.js (real Supabase Auth
+// password login via login.html) on every protected page,
+// including this one. This module no longer manages its own
+// sign-in state -- it looks up the current authenticated user
+// directly from Supabase when needed, rather than tracking a
+// local currentUser variable that only OTP verification used to
+// populate. Signups are disabled at the Supabase project level;
+// Kelvin's is the only account that will ever exist.
 // ============================================
 
 import { supabaseClient } from './supabaseClient.js';
 import { geocodeAddress } from './geocode.js';
 import { matchProgramsForBuyer } from './matchingEngine.js';
-import { submitLeadCapture, isValidEmail } from './leadCapture.js';
+import { submitLeadCapture } from './leadCapture.js';
 
-let currentUser = null;
 let currentProfile = null;
 
-// ---------- Step 1: passwordless email sign-in ----------
-
-export async function sendLoginCode(email) {
-  if (!isValidEmail(email)) throw new Error('Please enter a valid email address.');
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: true }
-  });
-  if (error) throw new Error(`Could not send code: ${error.message}`);
-}
-
-export async function verifyLoginCode(email, code) {
-  const { data, error } = await supabaseClient.auth.verifyOtp({
-    email,
-    token: code,
-    type: 'email'
-  });
-  if (error) throw new Error(`Invalid or expired code: ${error.message}`);
-  currentUser = data.user;
-  return currentUser;
-}
-
-export function getCurrentUser() {
-  return currentUser;
-}
-
-// ---------- Step 2: occupation list for the dropdown ----------
+// ---------- Occupation list for the dropdown ----------
 
 export async function loadOccupations() {
   const { data, error } = await supabaseClient
@@ -57,7 +33,7 @@ export async function loadOccupations() {
   return data;
 }
 
-// ---------- Step 3: geocode both location fields ----------
+// ---------- Geocode both location fields ----------
 
 // Returns { residence: LocationContext, purchase: LocationContext }
 // Either can be null if the buyer left that field blank (residence
@@ -77,14 +53,15 @@ export async function geocodeBuyerLocations(residenceAddress, purchaseAddress) {
   return result;
 }
 
-// ---------- Step 4: save profile (upsert -- one row per buyer) ----------
+// ---------- Save profile (upsert -- one row per buyer) ----------
 
 // formData shape matches the intake.html form fields directly.
 export async function saveBuyerProfile(formData, locations) {
-  if (!currentUser) throw new Error('Not signed in.');
+  const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+  if (userError || !user) throw new Error('Not signed in.');
 
   const profileRow = {
-    user_id: currentUser.id,
+    user_id: user.id,
 
     residence_state: locations.residence?.state || null,
     residence_county_fips: locations.residence?.countyFips || null,
@@ -129,7 +106,7 @@ export async function saveBuyerProfile(formData, locations) {
   return data;
 }
 
-// ---------- Step 5: run the match ----------
+// ---------- Run the match ----------
 
 export async function runMatch() {
   if (!currentProfile) throw new Error('No profile saved yet.');
@@ -140,7 +117,7 @@ export function getCurrentProfile() {
   return currentProfile;
 }
 
-// ---------- Step 6: optional follow-up request ----------
+// ---------- Optional follow-up request ----------
 
 export async function requestFollowUp(contactInfo) {
   if (!currentProfile) throw new Error('No profile saved yet.');
