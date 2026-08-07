@@ -3,11 +3,15 @@
 // Wires intake.html's buttons/fields to js/intakeForm.js.
 // Kept separate from intakeForm.js so that module stays
 // UI-framework-agnostic (pure logic, testable on its own).
+//
+// Auth: this page is gated by authGuard.js (see <head> of
+// intake.html), which redirects unauthenticated visitors to
+// login.html before any of this runs. This controller no longer
+// runs its own sign-in flow -- it just reads the already-confirmed
+// session to grab the user's email for the follow-up request.
 // ============================================
 
 import {
-  sendLoginCode,
-  verifyLoginCode,
   loadOccupations,
   geocodeBuyerLocations,
   saveBuyerProfile,
@@ -17,7 +21,7 @@ import {
 import { supabaseClient } from './supabaseClient.js';
 import { formatPhoneNumber } from './leadCapture.js';
 
-let pendingEmail = '';
+let currentUserEmail = '';
 
 function showStep(stepId) {
   document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
@@ -43,50 +47,16 @@ document.getElementById('followup-phone').addEventListener('input', (e) => {
   e.target.value = formatPhoneNumber(e.target.value);
 });
 
-// Access model (locked): Supabase OTP only, no external gate.
-// On load, check whether a session already exists -- this covers
-// the case where the buyer clicked the email's confirmation LINK
-// instead of typing the code (supabase-js auto-detects the
-// access_token in the URL and establishes a session from it).
-// Without this check, a link-click would silently strand them on
-// the email-entry step even though they're actually signed in.
+// On load, grab the confirmed session's email for later use in the
+// follow-up request. authGuard.js has already redirected away any
+// visitor without a valid session before this code ever runs, so
+// no branching/redirect logic is needed here -- just read and go.
 (async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    await populateOccupations();
-    showStep('step-profile');
-  } else {
-    showStep('step-email');
-  }
+  currentUserEmail = session?.user?.email || '';
+  await populateOccupations();
+  showStep('step-profile');
 })();
-
-// ---------- Step 1: send code ----------
-document.getElementById('send-code-btn').addEventListener('click', async () => {
-  const email = document.getElementById('email-input').value.trim();
-  const errorEl = document.getElementById('email-error');
-  errorEl.textContent = '';
-  try {
-    await sendLoginCode(email);
-    pendingEmail = email;
-    showStep('step-otp');
-  } catch (err) {
-    errorEl.textContent = err.message;
-  }
-});
-
-// ---------- Step 2: verify code ----------
-document.getElementById('verify-code-btn').addEventListener('click', async () => {
-  const code = document.getElementById('otp-input').value.trim();
-  const errorEl = document.getElementById('otp-error');
-  errorEl.textContent = '';
-  try {
-    await verifyLoginCode(pendingEmail, code);
-    await populateOccupations();
-    showStep('step-profile');
-  } catch (err) {
-    errorEl.textContent = err.message;
-  }
-});
 
 async function populateOccupations() {
   const occupations = await loadOccupations();
@@ -99,7 +69,7 @@ async function populateOccupations() {
   }
 }
 
-// ---------- Step 3: submit profile + run match ----------
+// ---------- Submit profile + run match ----------
 document.getElementById('submit-profile-btn').addEventListener('click', async () => {
   const errorEl = document.getElementById('profile-error');
   errorEl.textContent = '';
@@ -285,12 +255,12 @@ function buildResultCard(result, status) {
   return card;
 }
 
-// ---------- Step 4: optional follow-up ----------
+// ---------- Optional follow-up ----------
 document.getElementById('request-followup-btn').addEventListener('click', async () => {
   const successEl = document.getElementById('followup-success');
   try {
     await requestFollowUp({
-      email: pendingEmail,
+      email: currentUserEmail,
       name: document.getElementById('followup-name').value || null,
       phone: document.getElementById('followup-phone').value || null,
       notes: document.getElementById('followup-notes').value || null,
