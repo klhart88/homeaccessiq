@@ -8,7 +8,6 @@
   <title>HomeAccessIQ -- Find Your Homebuyer Programs</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/intake.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
 </head>
 <body>
@@ -20,31 +19,12 @@
 
   <main id="app-root">
 
-    <!-- STEP 1: email entry (passwordless sign-in -- Supabase OTP
-         is the entire access mechanism, no external gate) -->
-    <section id="step-email" class="step active">
-      <h2>Let's get started</h2>
-      <p>Enter your email and we'll send you a one-time code.</p>
-      <label>Email address
-        <input type="email" id="email-input" autocomplete="email" required>
-      </label>
-      <button id="send-code-btn">Send Code</button>
-      <p class="error-text" id="email-error"></p>
-    </section>
+    <!-- Access is gated by authGuard.js (see <head>), which
+         redirects to login.html before this page is reachable
+         without a valid session. No sign-in UI lives here anymore. -->
 
-    <!-- STEP 2: enter the code -->
-    <section id="step-otp" class="step">
-      <h2>Check your email</h2>
-      <p id="otp-message">Enter the 6-digit code we just sent you.</p>
-      <label>Code
-        <input type="text" id="otp-input" inputmode="numeric" maxlength="12" autocomplete="one-time-code" required>
-      </label>
-      <button id="verify-code-btn">Verify</button>
-      <p class="error-text" id="otp-error"></p>
-    </section>
-
-    <!-- STEP 3: profile intake -->
-    <section id="step-profile" class="step">
+    <!-- STEP 1: profile intake -->
+    <section id="step-profile" class="step active">
       <h2>Tell us about your home search</h2>
 
       <fieldset>
@@ -147,7 +127,7 @@
       <p class="error-text" id="profile-error"></p>
     </section>
 
-    <!-- STEP 4: results -->
+    <!-- STEP 2: results -->
     <section id="step-results" class="step">
       <h2>Your Results</h2>
       <div id="results-list"></div>
