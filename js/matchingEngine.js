@@ -322,6 +322,37 @@ function evaluateGeographicScope(config, buyer) {
 // informative rather than a generic stub. Once the tract list is
 // confirmed current with IHCDA, this can be simplified to compute
 // pass/fail directly.
+//
+// BUG HISTORY: targetedTractCaveat() was originally written for
+// IHCDA only, with "IHCDA" hardcoded into all four returned
+// messages. That was invisible while Indiana was the only state
+// using this path, and broke silently the moment FL Assist/FL HLP
+// set rule_config.targeted_lookup_table -- Florida buyers saw
+// "verify with IHCDA" on Florida programs. Fixed by resolving the
+// agency name from buyer.purchase_state via STATE_HOUSING_AGENCY_NAMES
+// / housingAgencyLabel() below, and by moving the IHCDA-specific
+// "two independent documents" corroboration detail out of this
+// function and into per-program data (rule_config
+// .targeted_tract_corroboration_note), so the function itself has
+// no state-specific content left in it.
+//
+// RULE FOR FUTURE STATES: never hardcode a state or agency name
+// into this function (or any other shared/cross-cutting code path
+// used by more than one state's rules). Add an entry to
+// STATE_HOUSING_AGENCY_NAMES instead. housingAgencyLabel() falls
+// back to a generic-but-accurate label for any state not yet in
+// the map, so an unmapped state degrades gracefully rather than
+// silently borrowing another state's agency name.
+
+const STATE_HOUSING_AGENCY_NAMES = {
+  IN: 'IHCDA',
+  FL: 'Florida Housing',
+  KY: 'Kentucky Housing Corporation'
+};
+
+function housingAgencyLabel(stateCode) {
+  return STATE_HOUSING_AGENCY_NAMES[stateCode] || `${stateCode}'s state housing finance agency`;
+}
 async function countyHasTargetedProgram(tableName, stateCode, countyFips) {
   const { data: tableRow } = await supabaseClient
     .from('geo_lookup_tables')
@@ -366,24 +397,37 @@ async function targetedTractCaveat(config, buyer, valueLabel) {
   const hasProgram = await countyHasTargetedProgram(
     config.targeted_lookup_table, buyer.purchase_state, buyer.purchase_county_fips
   );
-  if (!hasProgram) return null; // not one of the 17 counties -- proceed normally
+  if (!hasProgram) return null; // not one of the targeted counties -- proceed normally
+
+  const agency = housingAgencyLabel(buyer.purchase_state);
 
   const sourceNote = config.targeted_tract_source_url
-    ? ` (IHCDA's tract list: ${config.targeted_tract_source_url})`
+    ? ` (${agency}'s tract list: ${config.targeted_tract_source_url})`
     : '';
 
   if (!buyer.purchase_census_tract) {
-    return `This county has a higher ${valueLabel} for purchases in a targeted census tract, but no census tract is on file for this address -- cannot determine which limit applies. Verify with IHCDA${sourceNote}.`;
+    return `This county has a higher ${valueLabel} for purchases in a targeted census tract, but no census tract is on file for this address -- cannot determine which limit applies. Verify with ${agency}${sourceNote}.`;
   }
 
   const hasInventory = await countyHasTractInventory(buyer.purchase_state, buyer.purchase_county_fips);
   if (!hasInventory) {
-    return `This county has a targeted census tract per IHCDA's current program, but HomeAccessIQ has no tract boundary data on file for it -- verify targeted-area status directly with IHCDA${sourceNote}.`;
+    return `This county has a targeted census tract per ${agency}'s current program, but HomeAccessIQ has no tract boundary data on file for it -- verify targeted-area status directly with ${agency}${sourceNote}.`;
   }
 
   const isListed = await isTractListedAsTargeted(buyer.purchase_state, buyer.purchase_census_tract);
   const likely = isListed ? 'appears to be' : 'does not appear to be';
-  return `This address ${likely} in a targeted census tract based on IHCDA's tract list. This has not been formally confirmed with IHCDA directly, though two independent IHCDA documents (2020 and 2024) agree on this county's tract boundaries. Verify targeted-area status directly with IHCDA before relying on the ${valueLabel} shown${sourceNote}.`;
+
+  // targeted_tract_corroboration_note: optional program-level detail
+  // about how confident the tract list itself is (e.g. IHCDA's "two
+  // independent documents (2020 and 2024) agree on this county's tract
+  // boundaries"). Lives in that program's rule_config, not hardcoded
+  // here, so this function stays state-agnostic. Omitted entirely if
+  // not set, rather than guessing at a generic substitute.
+  const corroborationNote = config.targeted_tract_corroboration_note
+    ? ` ${config.targeted_tract_corroboration_note}`
+    : '';
+
+  return `This address ${likely} in a targeted census tract based on ${agency}'s tract list. This has not been formally confirmed with ${agency} directly.${corroborationNote} Verify targeted-area status directly with ${agency} before relying on the ${valueLabel} shown${sourceNote}.`;
 }
 
 async function evaluateIncomeThreshold(config, buyer) {
