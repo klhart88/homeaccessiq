@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Program Reference — HomeAccessIQ</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-subtle: #fafafa;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --blue: #2563eb;
+    --blue-tint: #eff6ff;
+    --amber: #b45309;
+    --amber-tint: #fffbeb;
+    --amber-border: #fde68a;
+    --green: #15803d;
+    --green-tint: #f0fdf4;
+    --in-color: #4f46e5;
+    --in-tint: #eef2ff;
+    --fl-color: #c2410c;
+    --fl-tint: #fff7ed;
+    --al-color: #0f766e;
+    --al-tint: #f0fdfa;
+    --ky-color: #7c3aed;
+    --ky-tint: #f5f3ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.5;
+  }
+
+  .layout {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Sidebar nav */
+  nav.sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    padding: 32px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+
+  nav.sidebar h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0 0 12px 4px;
+  }
+
+  /* Search box */
+  .nav-search {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 12px;
+    font-family: inherit;
+  }
+
+  .nav-search:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+
+  /* State filter chips */
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  .filter-chip {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .filter-chip.active.IN { color: var(--in-color); background: var(--in-tint); border-color: var(--in-color); }
+  .filter-chip.active.FL { color: var(--fl-color); background: var(--fl-tint); border-color: var(--fl-color); }
+  .filter-chip.active.AL { color: var(--al-color); background: var(--al-tint); border-color: var(--al-color); }
+  .filter-chip.active.KY { color: var(--ky-color); background: var(--ky-tint); border-color: var(--ky-color); }
+
+  .no-results {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 8px 4px;
+    display: none;
+  }
+
+  nav.sidebar .state-group {
+    margin-bottom: 20px;
+  }
+
+  nav.sidebar .state-group.hidden-group {
+    display: none;
+  }
+
+  nav.sidebar .state-group h3 {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0 0 6px 4px;
+  }
+
+  nav.sidebar a {
+    display: block;
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  nav.sidebar a:hover {
+    background: var(--bg-subtle);
+  }
+
+  nav.sidebar a.hidden-link {
+    display: none;
+  }
+
+  section.program.hidden-section {
+    display: none;
+  }
+
+  /* Main content */
+  main {
+    flex: 1;
+    padding: 32px 40px 80px;
+    min-width: 0;
+  }
+
+  header.page-header {
+    margin-bottom: 32px;
+  }
+
+  header.page-header h1 {
+    font-size: 26px;
+    margin: 0 0 6px;
+  }
+
+  header.page-header p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 15px;
+  }
+
+  /* At-a-glance table */
+  .glance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 48px;
+    font-size: 14px;
+  }
+
+  .glance-table th, .glance-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .glance-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .glance-table tr:hover td {
+    background: var(--bg-subtle);
+  }
+
+  .glance-table tr.hidden-row {
+    display: none;
+  }
+
+  /* State pill */
+  .state-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .state-pill.IN { color: var(--in-color); background: var(--in-tint); }
+  .state-pill.FL { color: var(--fl-color); background: var(--fl-tint); }
+  .state-pill.AL { color: var(--al-color); background: var(--al-tint); }
+  .state-pill.KY { color: var(--ky-color); background: var(--ky-tint); }
+
+  /* Program card */
+  section.program {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+    scroll-margin-top: 20px;
+  }
+
+  section.program.retired {
+    opacity: 0.6;
+  }
+
+  .program-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+
+  .program-title-row h2 {
+    font-size: 19px;
+    margin: 0;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--blue-tint);
+    color: var(--blue);
+  }
+
+  .badge.unconfirmed {
+    background: var(--amber-tint);
+    color: var(--amber);
+  }
+
+  section.program.unconfirmed-status {
+    opacity: 0.7;
+  }
+
+  .verified-stamp {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .purpose {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+
+  .purpose strong {
+    color: var(--text);
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+  }
+
+  h3.subhead {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    margin: 0 0 8px;
+  }
+
+  ul.features {
+    margin: 0 0 16px;
+    padding-left: 18px;
+    font-size: 14px;
+  }
+
+  ul.features li {
+    margin-bottom: 6px;
+  }
+
+  .ideal-box {
+    background: var(--bg-subtle);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+
+  .caveat-box {
+    background: var(--amber-tint);
+    border: 1px solid var(--amber-border);
+    color: var(--amber);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 14px;
+  }
+
+  .source-line {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 14px;
+  }
+
+  .source-line a {
+    color: var(--text-muted);
+  }
+
+  footer.page-footer {
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 900px) {
+    nav.sidebar { display: none; }
+    main { padding: 24px; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <nav class="sidebar">
+    <h2>Programs</h2>
+    <input type="text" class="nav-search" id="navSearch" placeholder="Search programs…" aria-label="Search programs">
+    <div class="filter-chips" id="filterChips">
+      <span class="filter-chip IN" data-state="IN">IN</span>
+      <span class="filter-chip FL" data-state="FL">FL</span>
+      <span class="filter-chip AL" data-state="AL">AL</span>
+      <span class="filter-chip KY" data-state="KY">KY</span>
+    </div>
+    <div class="no-results" id="noResults">No programs match.</div>
+    <div class="state-group" data-state="IN">
+      <h3><span class="state-pill IN">IN</span> Indiana — IHCDA</h3>
+      <a href="#first-step" data-name="first step">First Step</a>
+      <a href="#step-down" data-name="step down">Step Down</a>
+      <a href="#next-home" data-name="next home">Next Home</a>
+      <a href="#next-step" data-name="next step refinance">Next Step</a>
+    </div>
+    <div class="state-group" data-state="FL">
+      <h3><span class="state-pill FL">FL</span> Florida</h3>
+      <a href="#fl-hometown-heroes" data-name="florida hometown heroes">Hometown Heroes</a>
+      <a href="#miami-dade-dpa" data-name="miami dade county dpa">Miami-Dade DPA</a>
+      <a href="#fl-assist" data-name="florida assist fl assist">FL Assist</a>
+      <a href="#fl-hlp" data-name="florida homeownership loan program hlp">FL HLP</a>
+      <a href="#hfa-preferred-plus" data-name="hfa preferred advantage plus second mortgage">HFA Preferred/Advantage PLUS</a>
+      <a href="#salute-our-soldiers" data-name="salute our soldiers military loan program">Salute Our Soldiers (unconfirmed)</a>
+    </div>
+    <div class="state-group" data-state="AL">
+      <h3><span class="state-pill AL">AL</span> Alabama</h3>
+      <a href="#ahfa-step-up" data-name="ahfa step up">AHFA Step Up</a>
+    </div>
+    <div class="state-group" data-state="KY">
+      <h3><span class="state-pill KY">KY</span> Kentucky</h3>
+      <a href="#uk-eahp" data-name="uk eahp employer assisted housing">UK EAHP</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="page-header">
+      <h1>Program Reference</h1>
+      <p>Personal quick reference for HomeAccessIQ's programs — not part of the client-facing app. Last full review: July 31, 2026.</p>
+    </header>
+
+    <table class="glance-table">
+      <thead>
+        <tr>
+          <th>Program</th>
+          <th>State</th>
+          <th>First-Time Buyer Required?</th>
+          <th>Assistance</th>
+          <th>Primary Benefit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-state="IN" data-name="first step">
+          <td>First Step</td>
+          <td><span class="state-pill IN">IN</span></td>
+          <td>Yes*</td>
+          <td>5% DPA</td>
+          <td>Upfront purchase costs</td>
+        </tr>
+        <tr data-state="IN" data-name="step down">
+          <td>Step Down</td>
+          <td><span class="state-pill IN">IN</span></td>
+          <td>Yes*</td>
+          <td>None</td>
+          <td>Lower rate / monthly payment</td>
+        </tr>
+        <tr data-state="IN" data-name="next home">
+          <td>Next Home</td>
+          <td><span class="state-pill IN">IN</span></td>
+          <td>No</td>
+          <td>3.5% DPA</td>
+          <td>DPA for a wider range of buyers</td>
+        </tr>
+        <tr data-state="IN" data-name="next step refinance">
+          <td>Next Step</td>
+          <td><span class="state-pill IN">IN</span></td>
+          <td>No (existing IHCDA loan required)</td>
+          <td>Program-specific</td>
+          <td>Refinance existing IHCDA loan</td>
+        </tr>
+        <tr data-state="FL" data-name="florida hometown heroes">
+          <td>Hometown Heroes</td>
+          <td><span class="state-pill FL">FL</span></td>
+          <td>Yes (waived for veterans)</td>
+          <td>$10k–$35k, 0% deferred</td>
+          <td>Essential-workforce DPA</td>
+        </tr>
+        <tr data-state="FL" data-name="miami dade county dpa">
+          <td>Miami-Dade DPA</td>
+          <td><span class="state-pill FL">FL</span></td>
+          <td>Yes</td>
+          <td>Up to $35,000, 0% deferred</td>
+          <td>County-resident DPA</td>
+        </tr>
+        <tr data-state="FL" data-name="florida assist fl assist">
+          <td>FL Assist</td>
+          <td><span class="state-pill FL">FL</span></td>
+          <td>Yes</td>
+          <td>$10,000, 0% deferred</td>
+          <td>Standard Bond/TBA DPA</td>
+        </tr>
+        <tr data-state="FL" data-name="florida homeownership loan program hlp">
+          <td>FL HLP</td>
+          <td><span class="state-pill FL">FL</span></td>
+          <td>Yes</td>
+          <td>$12,500, 3% amortizing</td>
+          <td>Standard Bond/TBA DPA w/ monthly payment</td>
+        </tr>
+        <tr data-state="FL" data-name="hfa preferred advantage plus second mortgage">
+          <td>HFA Preferred/Advantage PLUS</td>
+          <td><span class="state-pill FL">FL</span></td>
+          <td>Yes</td>
+          <td>3–5% of loan, forgivable</td>
+          <td>PLUS TBA only, w/ HFA Preferred/Advantage first mortgage</td>
+        </tr>
+        <tr data-state="FL" data-name="salute our soldiers military loan program">
+          <td>Salute Our Soldiers <em>(unconfirmed)</em></td>
+          <td><span class="state-pill FL">FL</span></td>
+          <td>N/A</td>
+          <td>None (rate-only)</td>
+          <td>Rate discount for military — status unclear</td>
+        </tr>
+        <tr data-state="AL" data-name="ahfa step up">
+          <td>AHFA Step Up</td>
+          <td><span class="state-pill AL">AL</span></td>
+          <td>No</td>
+          <td>4% up to $10,000</td>
+          <td>Statewide DPA</td>
+        </tr>
+        <tr data-state="KY" data-name="uk eahp employer assisted housing">
+          <td>UK EAHP</td>
+          <td><span class="state-pill KY">KY</span></td>
+          <td>N/A — employer-based</td>
+          <td>5% up to $15,000, forgivable</td>
+          <td>UK employee homebuying incentive</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="no-results" id="noTableResults" style="margin: -32px 0 32px; display: none;">No programs match your search/filter.</p>
+
+    <!-- ============ INDIANA — IHCDA ============ -->
+
+    <section class="program" id="first-step" data-state="IN">
+      <div class="program-title-row">
+        <span class="state-pill IN">IN</span>
+        <h2>First Step</h2>
+      </div>
+      <div class="verified-stamp">Verified against IHCDA directly (call, 7/31/26) + Feb 2026 Universal Program Guide</div>
+      <p class="purpose"><strong>Purpose:</strong> Help first-time homebuyers cover the down payment — often the biggest barrier to purchasing.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>Available to first-time homebuyers, qualified veterans, or buyers purchasing in an eligible targeted census tract or whole targeted county.</li>
+            <li>Provides 5% down payment assistance based on purchase price.</li>
+            <li>Non-forgivable second mortgage, no monthly payment. Balance due when the first mortgage terminates, property stops being primary residence, is sold, refinanced (outside an IHCDA refinance program), or a HELOC is taken.</li>
+            <li>30-year fixed-rate FHA or Conventional financing through participating lenders.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          Has the income to qualify for a mortgage but hasn't saved enough for the down payment and closing costs.
+        </div>
+      </div>
+      <div class="source-line">Source: <a href="https://www.in.gov/ihcda/homebuyers/" target="_blank">in.gov/ihcda/homebuyers</a></div>
+    </section>
+
+    <section class="program" id="step-down" data-state="IN">
+      <div class="program-title-row">
+        <span class="state-pill IN">IN</span>
+        <h2>Step Down</h2>
+        <span class="badge">Interest rate discount — no DPA</span>
+      </div>
+      <div class="verified-stamp">Verified against IHCDA directly (call, 7/31/26)</div>
+      <p class="purpose"><strong>Purpose:</strong> Reduce the monthly mortgage payment instead of providing cash assistance.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>Available to eligible first-time homebuyers, qualified veterans, or buyers in a targeted tract/county — same eligibility structure as First Step.</li>
+            <li>Below-market interest rate on the first mortgage.</li>
+            <li><strong>No down payment assistance included.</strong></li>
+            <li>30-year fixed-rate FHA or Conventional financing.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          Already has funds for the purchase, but wants to maximize long-term affordability through a lower monthly payment.
+        </div>
+      </div>
+      <div class="source-line">Source: <a href="https://www.in.gov/ihcda/homebuyers/" target="_blank">in.gov/ihcda/homebuyers</a></div>
+    </section>
+
+    <section class="program" id="next-home" data-state="IN">
+      <div class="program-title-row">
+        <span class="state-pill IN">IN</span>
+        <h2>Next Home</h2>
+      </div>
+      <div class="verified-stamp">Verified against IHCDA directly (call, 7/31/26)</div>
+      <p class="purpose"><strong>Purpose:</strong> Extend IHCDA down payment assistance to a broader range of buyers.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li><strong>Does not require first-time-buyer status</strong> — available to first-time AND repeat buyers.</li>
+            <li>3.5% down payment assistance as a non-forgivable second mortgage.</li>
+            <li>Balance due when the first mortgage terminates, property stops being primary residence, is sold, refinanced (outside an IHCDA refinance program), or a HELOC is taken.</li>
+            <li>Subject to the same income/acquisition limits as First Step.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          Purchasing another home, relocating, or otherwise ineligible for First Step, but still wants help with upfront costs.
+        </div>
+      </div>
+      <div class="source-line">Source: <a href="https://www.in.gov/ihcda/homebuyers/" target="_blank">in.gov/ihcda/homebuyers</a></div>
+    </section>
+
+    <section class="program" id="next-step" data-state="IN">
+      <div class="program-title-row">
+        <span class="state-pill IN">IN</span>
+        <h2>Next Step</h2>
+        <span class="badge">Refinance only</span>
+      </div>
+      <div class="verified-stamp">Verified against IHCDA directly (call, 7/31/26)</div>
+      <p class="purpose"><strong>Purpose:</strong> Help existing IHCDA borrowers refinance their mortgage.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>One-time refinance opportunity for homeowners with an eligible First Place (retired program) or First Step mortgage.</li>
+            <li>30-year fixed-rate FHA or Conventional refinancing.</li>
+            <li>Non-forgivable DPA carried over where applicable under the refinance.</li>
+            <li>Not a purchase-assistance program — not shown to new buyers in the app.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          An existing IHCDA homeowner whose mortgage qualifies and who could benefit from refinancing.
+        </div>
+      </div>
+      <div class="source-line">Source: <a href="https://www.in.gov/ihcda/homebuyers/" target="_blank">in.gov/ihcda/homebuyers</a></div>
+    </section>
+
+    <!-- ============ FLORIDA ============ -->
+
+    <section class="program" id="fl-hometown-heroes" data-state="FL">
+      <div class="program-title-row">
+        <span class="state-pill FL">FL</span>
+        <h2>Florida Hometown Heroes</h2>
+      </div>
+      <div class="verified-stamp">Verified against Florida Housing Finance Corporation, 7/31/26</div>
+      <p class="purpose"><strong>Purpose:</strong> Help essential-workforce and first-time buyers cover down payment and closing costs.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>$10,000–$35,000 as a 0% interest deferred second mortgage.</li>
+            <li>Eligibility gates on <strong>employer location</strong> (must be FL-based) and occupation, not the applicant's current state of residence — an out-of-state buyer relocating for a qualifying FL job can still qualify.</li>
+            <li>Veterans are exempt from the occupation, employer, and first-time-buyer requirements.</li>
+            <li>Also offers a lower first-mortgage rate as part of the program.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          Florida essential-workforce employee (teacher, healthcare worker, first responder, etc.) or a veteran, buying a primary residence in FL.
+        </div>
+      </div>
+      <div class="source-line">Source: <a href="https://www.floridahousing.org/" target="_blank">floridahousing.org</a></div>
+    </section>
+
+    <section class="program" id="miami-dade-dpa" data-state="FL">
+      <div class="program-title-row">
+        <span class="state-pill FL">FL</span>
+        <h2>Miami-Dade County Homebuyer DPA</h2>
+      </div>
+      <div class="verified-stamp">Verified against Miami-Dade County directly, 7/31/26 — income limits corrected this session</div>
+      <p class="purpose"><strong>Purpose:</strong> Help first-time buyers currently residing in Miami-Dade County cover their down payment.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>Up to $35,000 as an interest-free deferred loan, up to 30 years, no monthly payment.</li>
+            <li>Must be a Miami-Dade County resident at time of application <strong>and</strong> loan closing — unlike Hometown Heroes, this one really does gate on current residency.</li>
+            <li>Requires HUD-approved homebuyer counseling and education.</li>
+            <li>Income limits by household size: 1 — $95,620 · 2 — $109,200 · 3 — $122,920 · 4 — $136,500. <em>(5+ not yet verified.)</em></li>
+            <li><strong>Shared-equity clawback on resale:</strong> 100% of profit due to the County if sold within 1–3 years, 50% within 4–6 years, 0% after 6 years.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          First-time buyer already living in Miami-Dade County who plans to stay in the home long-term (the resale clawback matters most for short holds).
+        </div>
+      </div>
+      <div class="caveat-box">Contact: Shawn Topps, (786) 469-2209 — for anything beyond household size 4.</div>
+      <div class="source-line">Source: <a href="https://www.miamidade.gov/global/housing/downpayment-assistance.page" target="_blank">miamidade.gov</a></div>
+    </section>
+
+    <section class="program" id="fl-assist" data-state="FL">
+      <div class="program-title-row">
+        <span class="state-pill FL">FL</span>
+        <h2>Florida Assist (FL Assist)</h2>
+      </div>
+      <div class="verified-stamp">Verified against Florida Housing Standard Bond Guide 6.25.26 (Lakeview), effective 05/06/2026 — income & purchase price limits populated and live in the app this session (7/31/26)</div>
+      <p class="purpose"><strong>Purpose:</strong> Down payment and closing cost assistance paired with a Florida Housing first mortgage (Standard Bond/Standard TBA).</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>$10,000, 0% interest, non-amortizing, deferred second mortgage. No monthly payment.</li>
+            <li><strong>Not forgivable</strong> — due in full upon sale, transfer, satisfaction/refinance of the first mortgage, or when the borrower stops occupying the home as their primary residence.</li>
+            <li>Available with FL First (Gov't FHA/USDA-RD/VA), HFA Preferred (Fannie Mae), or HFA Advantage (Freddie Mac) first mortgages.</li>
+            <li><strong>Mutually exclusive</strong> with FL HLP and HFA Preferred/Advantage PLUS — a buyer picks exactly one. Not enforced by the matching engine yet; all three can currently show as simultaneous "matches."</li>
+            <li>County-level income limits (NonTargeted) verified and live: 1–2 person and 3+ person tiers.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          FL first-time buyer using a Standard Bond/TBA first mortgage, needs modest down payment help, comfortably under the county's non-targeted income limit.
+        </div>
+      </div>
+      <div class="caveat-box">Targeted-area income/purchase-price figures (which are higher than non-targeted) are populated in the database but <strong>not yet wired into the matching engine</strong> — the app currently checks every county against the NonTargeted figures regardless of whether the property sits in a Federally Designated Targeted Area. Conservative direction (won't wrongly deny a real buyer), but may under-serve a targeted-area buyer whose real limit is higher. An earlier attempt to wire this in surfaced a bug (a stray reference to IHCDA's tract data on an FL result) and was rolled back 7/31/26 pending a proper fix.</div>
+      <div class="source-line">Source: Florida Housing Standard Bond Guide 6.25.26 (Lakeview) — PDF provided directly; general org site <a href="https://www.floridahousing.org/" target="_blank">floridahousing.org</a></div>
+    </section>
+
+    <section class="program" id="fl-hlp" data-state="FL">
+      <div class="program-title-row">
+        <span class="state-pill FL">FL</span>
+        <h2>Florida Homeownership Loan Program (FL HLP)</h2>
+      </div>
+      <div class="verified-stamp">Verified against Florida Housing Standard Bond Guide 6.25.26 (Lakeview), effective 05/06/2026 — income & purchase price limits populated and live in the app this session (7/31/26)</div>
+      <p class="purpose"><strong>Purpose:</strong> Down payment and closing cost assistance paired with a Florida Housing first mortgage, for buyers who can absorb a small second-mortgage payment.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>$12,500, 3% interest, <strong>fully-amortizing</strong> second mortgage, 30-year term. Carries a real monthly payment (~$52.70/mo at these terms) — factor into DTI.</li>
+            <li>Not forgivable — balance due in full upon sale, transfer, satisfaction/refinance of the first mortgage, or when the borrower stops occupying the home.</li>
+            <li>Same eligible first-mortgage pairings as FL Assist.</li>
+            <li><strong>Mutually exclusive</strong> with FL Assist and HFA Preferred/Advantage PLUS — same not-yet-enforced caveat as FL Assist.</li>
+            <li><strong>Real finding this session:</strong> HLP's NonTargeted 3+ Person income figures are <em>not identical</em> to FL Assist's in 9 counties — Baker, Collier, Gulf, Martin, Monroe, Okaloosa, Polk, St. Lucie, Walton — confirmed by direct row-by-row comparison of both tables in the source guide. Kept as fully separate lookup tables for this reason; do not assume they're interchangeable.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          FL first-time buyer who wants a slightly larger DPA amount than FL Assist and can handle a small added monthly payment within their DTI.
+        </div>
+      </div>
+      <div class="caveat-box">Same targeted-area gap as FL Assist: targeted figures are in the database but not yet wired into the matching engine.</div>
+      <div class="source-line">Source: Florida Housing Standard Bond Guide 6.25.26 (Lakeview) — PDF provided directly; general org site <a href="https://www.floridahousing.org/" target="_blank">floridahousing.org</a></div>
+    </section>
+
+    <section class="program" id="hfa-preferred-plus" data-state="FL">
+      <div class="program-title-row">
+        <span class="state-pill FL">FL</span>
+        <h2>HFA Preferred/Advantage PLUS Second Mortgage</h2>
+        <span class="badge">PLUS TBA only</span>
+      </div>
+      <div class="verified-stamp">Verified against Florida Housing Standard Bond Guide 6.25.26 (Lakeview) for terms — income/purchase price limits still <strong>not populated</strong> as of 7/31/26</div>
+      <p class="purpose"><strong>Purpose:</strong> Forgivable down payment assistance for buyers using specific conventional (non-government) first mortgages.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>3%, 4%, or 5% of the total first mortgage loan amount as a forgivable second mortgage. Forgiven 20%/year over 5 years. 0% interest, no monthly payment.</li>
+            <li>Only available paired with HFA Preferred (Fannie Mae) or HFA Advantage (Freddie Mac) conventional first mortgages — <strong>not</strong> FHA/VA/USDA.</li>
+            <li>Confirmed to be a <strong>PLUS TBA-only</strong> product — there is no "PLUS BOND" offering on Florida Housing's rate sheet, so this doesn't pair with the Standard Bond program at all.</li>
+            <li>Not stackable with FL Assist or FL HLP.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          FL first-time buyer using HFA Preferred or HFA Advantage conventional financing who wants the assistance forgiven over time rather than repaid.
+        </div>
+      </div>
+      <div class="caveat-box">Still shows "pending verification" in the live app — this Bond Guide has no income/purchase price limit table for PLUS at all (it only covers FL Assist and FL HLP). Needs the separate <strong>PLUS TBA / Standard TBA lender guide</strong> as its own source before it can be populated — a different document than the one used for FL Assist/HLP.</div>
+      <div class="source-line">Source: Florida Housing Standard Bond Guide 6.25.26 (Lakeview) for product terms; eHousingPlus rate page for PLUS TBA confirmation</div>
+    </section>
+
+    <section class="program unconfirmed-status" id="salute-our-soldiers" data-state="FL">
+      <div class="program-title-row">
+        <span class="state-pill FL">FL</span>
+        <h2>Salute Our Soldiers Military Loan Program</h2>
+        <span class="badge unconfirmed">Status unconfirmed</span>
+      </div>
+      <div class="verified-stamp">Not built in the app — status genuinely ambiguous as of 7/31/26</div>
+      <p class="purpose"><strong>Purpose (if active):</strong> A rate-only benefit for military borrowers — no down payment assistance of its own.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features (per secondary sources — not primary-confirmed)</h3>
+          <ul class="features">
+            <li>Rate discount only, similar in shape to IHCDA's Step Down — no DPA attached.</li>
+            <li>Unlike FL Assist/FL HLP/HFA Preferred PLUS, reportedly <em>not</em> mutually exclusive with any of them — could pair with any of the three DPA programs above, per secondary sources only.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          Unknown until status is confirmed — would likely be an active-duty/veteran FL buyer if the program is genuinely still active.
+        </div>
+      </div>
+      <div class="caveat-box"><strong>Why this is flagged, not built:</strong> still listed as an active "Special Program" on Florida Housing's current homebuyer overview page, but its own program page returns a 404 "has been relocated" error on Florida Housing's own site. Could be a live program with a stale internal link, or something not fully retired — genuinely can't tell from the public site alone. <strong>Call Florida Housing directly (850-488-4197) to confirm before building this into the app.</strong></div>
+      <div class="source-line">Source: Florida Housing's homebuyer program overview page (listing only — program's own page 404s)</div>
+    </section>
+
+    <!-- ============ ALABAMA ============ -->
+
+    <section class="program" id="ahfa-step-up" data-state="AL">
+      <div class="program-title-row">
+        <span class="state-pill AL">AL</span>
+        <h2>AHFA Step Up</h2>
+      </div>
+      <div class="verified-stamp">Verified against AHFA directly, 7/31/26 — data corrected this session (fabricated income tier removed)</div>
+      <p class="purpose"><strong>Purpose:</strong> Statewide down payment assistance for Alabama homebuyers.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>4% of sales price, up to $10,000, as a 10-year second mortgage.</li>
+            <li>No first-time-buyer requirement.</li>
+            <li>Flat income limit: $172,800, regardless of household size or location — no tiering.</li>
+            <li>Minimum credit score 640, DTI ≤ 45%.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          Any Alabama buyer (first-time or repeat) who needs help with the down payment and fits within the flat income cap.
+        </div>
+      </div>
+      <div class="source-line">Source: <a href="https://www.ahfa.com/programs/homeownership/available-programs/step-up" target="_blank">ahfa.com</a></div>
+    </section>
+
+    <!-- ============ KENTUCKY ============ -->
+
+    <section class="program" id="uk-eahp" data-state="KY">
+      <div class="program-title-row">
+        <span class="state-pill KY">KY</span>
+        <h2>UK Employer Assisted Housing Program (EAHP)</h2>
+      </div>
+      <div class="verified-stamp">Verified against UK HR directly (Azetta Beatty, 7/31/26)</div>
+      <p class="purpose"><strong>Purpose:</strong> Homebuying incentive for University of Kentucky faculty/staff buying near campus.</p>
+      <div class="two-col">
+        <div>
+          <h3 class="subhead">Key features</h3>
+          <ul class="features">
+            <li>Forgivable loan: 5% of purchase price, up to $15,000. Forgiven 20% per year over 5 years.</li>
+            <li>Employer must be University of Kentucky or UK HealthCare.</li>
+            <li>Faculty: only instructor or assistant professor rank is eligible, and immediately (no tenure/waiting period).</li>
+            <li>Staff: eligible by <strong>maximum</strong> grade — ≤46 general staff, ≤10 hospital staff — after a 90-day tenure period (faculty are exempt from this wait).</li>
+            <li>Must purchase in a designated neighborhood near campus.</li>
+          </ul>
+        </div>
+        <div class="ideal-box">
+          <h3 class="subhead">Ideal borrower</h3>
+          UK instructor/assistant professor, or staff at or below the qualifying grade, buying near campus.
+        </div>
+      </div>
+      <div class="caveat-box">Designated-zone boundary is a 2013 scanned map — no digital/GIS version exists (confirmed directly with UK HR, 7/31/26). Always verify a specific address manually against the map; this is a permanent limitation, not a pending fix.</div>
+      <div class="source-line">Source: UK HR Benefits — direct correspondence, 7/31/26</div>
+    </section>
+
+    <footer class="page-footer">
+      For Kelvin's personal reference only — not shown to clients as part of the HomeAccessIQ app. Figures reflect the most recent verification available as of July 31, 2026, and should be re-confirmed with the administering agency before relying on them for a specific client's situation.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var searchInput = document.getElementById('navSearch');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.filter-chip'));
+  var noResults = document.getElementById('noResults');
+  var noTableResults = document.getElementById('noTableResults');
+
+  // Default: no state selected = show all states. Selecting one or more
+  // chips narrows the view to just those states.
+  var activeStates = { IN: false, FL: false, AL: false, KY: false };
+
+  function stateIsVisible(state) {
+    var anySelected = Object.keys(activeStates).some(function (s) { return activeStates[s]; });
+    if (!anySelected) return true;
+    return !!activeStates[state];
+  }
+
+  function applyFilters() {
+    var query = searchInput.value.trim().toLowerCase();
+    var anyLinkVisible = false;
+    var anyRowVisible = false;
+
+    // Sidebar nav
+    document.querySelectorAll('.state-group').forEach(function (group) {
+      var state = group.getAttribute('data-state');
+      var stateOn = stateIsVisible(state);
+      var groupHasVisibleLink = false;
+
+      group.querySelectorAll('a[data-name]').forEach(function (link) {
+        var name = link.getAttribute('data-name');
+        var matchesSearch = query === '' || name.indexOf(query) !== -1;
+        var visible = stateOn && matchesSearch;
+        link.classList.toggle('hidden-link', !visible);
+        if (visible) {
+          groupHasVisibleLink = true;
+          anyLinkVisible = true;
+        }
+      });
+
+      group.classList.toggle('hidden-group', !groupHasVisibleLink);
+    });
+
+    noResults.style.display = anyLinkVisible ? 'none' : 'block';
+
+    // At-a-glance table rows
+    document.querySelectorAll('.glance-table tbody tr').forEach(function (row) {
+      var state = row.getAttribute('data-state');
+      var name = row.getAttribute('data-name') || '';
+      var stateOn = stateIsVisible(state);
+      var matchesSearch = query === '' || name.indexOf(query) !== -1;
+      var visible = stateOn && matchesSearch;
+      row.classList.toggle('hidden-row', !visible);
+      if (visible) anyRowVisible = true;
+    });
+
+    noTableResults.style.display = anyRowVisible ? 'none' : 'block';
+
+    // Main content sections
+    document.querySelectorAll('section.program').forEach(function (section) {
+      var state = section.getAttribute('data-state');
+      var stateOn = stateIsVisible(state);
+      var name = (section.querySelector('h2') || {}).textContent || '';
+      var matchesSearch = query === '' || name.toLowerCase().indexOf(query) !== -1;
+      section.classList.toggle('hidden-section', !(stateOn && matchesSearch));
+    });
+  }
+
+  searchInput.addEventListener('input', applyFilters);
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var state = chip.getAttribute('data-state');
+      activeStates[state] = !activeStates[state];
+      chip.classList.toggle('active', activeStates[state]);
+      applyFilters();
+    });
+  });
+
+  applyFilters();
+})();
+</script>
+
+</body>
+</html>

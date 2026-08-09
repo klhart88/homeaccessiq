@@ -1,0 +1,49 @@
+/* HomeAccessIQ -- landing page styles */
+
+.landing-header {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.landing-hero {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.landing-hero h2 {
+  font-size: 1.75rem;
+  line-height: 1.3;
+}
+.landing-hero p {
+  color: #444;
+  line-height: 1.5;
+}
+
+.get-started-btn {
+  display: inline-block;
+  margin: 1.5rem 0;
+  padding: 0.9rem 2rem;
+  background: #1a5f3f;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.get-started-btn:hover {
+  background: #144a32;
+}
+
+.how-it-works {
+  text-align: left;
+  background: #f7f7f7;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 2rem;
+}
+.how-it-works ol {
+  padding-left: 1.25rem;
+}
+.how-it-works li {
+  margin-bottom: 0.5rem;
+}
