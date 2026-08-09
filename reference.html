@@ -667,7 +667,7 @@
           FL first-time buyer using a Standard Bond/TBA first mortgage, needs modest down payment help, comfortably under the county's non-targeted income limit.
         </div>
       </div>
-      <div class="caveat-box">Targeted-area income/purchase-price figures (which are higher than non-targeted) are populated in the database but <strong>not yet wired into the matching engine</strong> — the app currently checks every county against the NonTargeted figures regardless of whether the property sits in a Federally Designated Targeted Area. Conservative direction (won't wrongly deny a real buyer), but may under-serve a targeted-area buyer whose real limit is higher. An earlier attempt to wire this in surfaced a bug (a stray reference to IHCDA's tract data on an FL result) and was rolled back 7/31/26 pending a proper fix.</div>
+      <div class="caveat-box"><strong>Updated 8/8/26:</strong> the earlier bug (a hardcoded reference to IHCDA on FL results) is fixed — the matching engine now resolves the correct agency name per state. <code>targeted_lookup_table</code> is live again for this program. What's still open: real census-tract matching isn't built yet, so a buyer in one of Florida Housing's targeted counties currently gets a "pending verification" caveat correctly naming Florida Housing, rather than a computed pass/fail against the (higher) targeted-area figures. Same permanent-caveat design as IHCDA's own targeted-tract handling until real tract matching is built.</div>
       <div class="source-line">Source: Florida Housing Standard Bond Guide 6.25.26 (Lakeview) — PDF provided directly; general org site <a href="https://www.floridahousing.org/" target="_blank">floridahousing.org</a></div>
     </section>
 
@@ -694,7 +694,7 @@
           FL first-time buyer who wants a slightly larger DPA amount than FL Assist and can handle a small added monthly payment within their DTI.
         </div>
       </div>
-      <div class="caveat-box">Same targeted-area gap as FL Assist: targeted figures are in the database but not yet wired into the matching engine.</div>
+      <div class="caveat-box"><strong>Updated 8/8/26:</strong> same as FL Assist — the IHCDA-hardcoding bug is fixed and <code>targeted_lookup_table</code> is live again. Real census-tract matching still not built; targeted-county buyers get a "pending verification" caveat correctly naming Florida Housing rather than a computed pass/fail.</div>
       <div class="source-line">Source: Florida Housing Standard Bond Guide 6.25.26 (Lakeview) — PDF provided directly; general org site <a href="https://www.floridahousing.org/" target="_blank">floridahousing.org</a></div>
     </section>
 
