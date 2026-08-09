@@ -135,35 +135,26 @@ function renderResults(results) {
   const container = document.getElementById('results-list');
   container.innerHTML = '';
 
-  // Four buckets, not three. Kelvin's feedback after live testing
-  // (2026-07-30): a program with core numbers fully cleared but one
-  // detail unconfirmed (e.g. IHCDA First Step, blocked only on
-  // tract-list currency) looked visually identical to a program
-  // that's mostly irrelevant noise (e.g. an out-of-state program
-  // failing on state scope AND missing data) -- both amber, both
-  // starting with "Can't confirm yet." Nothing signaled which one
-  // was actually worth a buyer's time.
-  //
-  // Split: "likely match, pending verification" = isMatch true,
-  // needsVerification present, NO unmetReasons -- the buyer's core
-  // numbers all checked out, only some external detail is
-  // unconfirmed. Ranked directly under clean matches, checkmark
-  // icon (amber, not green, to still signal "not fully confirmed").
-  //
-  // "needs more info" = has BOTH unmetReasons and needsVerification
-  // -- genuinely lower-confidence, kept separate and de-prioritized.
+  // Two buckets, not four. Previously this function also split out
+  // "needs more info" (had both unmetReasons and needsVerification)
+  // and a bare "non-match" loop, to keep genuinely low-confidence
+  // programs visually distinct from clean non-matches. As of 8/8/26,
+  // matchingEngine.js's matchProgramsForBuyer() filters out any
+  // program with unmetReasons.length > 0 before it's ever returned
+  // here -- a deliberate design decision so buyers see only
+  // confirmed matches and plausible pending-verification matches,
+  // not the full non-match list (which would be overwhelming at
+  // national program-count scale). Every result reaching this
+  // function now has isMatch === true; needsVerification is what
+  // distinguishes a confirmed match from a pending-verification one.
   const likelyMatches = results.filter(r =>
-    r.isMatch && r.needsVerification && r.needsVerification.length > 0
+    r.needsVerification && r.needsVerification.length > 0
   );
-  const needsMoreInfo = results.filter(r =>
-    !r.isMatch && r.needsVerification && r.needsVerification.length > 0
-  );
-  const matches = results.filter(r => r.isMatch && (!r.needsVerification || r.needsVerification.length === 0));
-  const nonMatches = results.filter(r => !r.isMatch && (!r.needsVerification || r.needsVerification.length === 0));
+  const matches = results.filter(r => !r.needsVerification || r.needsVerification.length === 0);
 
   if (matches.length === 0 && likelyMatches.length === 0) {
     const p = document.createElement('p');
-    p.textContent = "We didn't find a confirmed match yet, but see the notes below -- some programs need a bit more info from you.";
+    p.textContent = "We didn't find any programs you appear to qualify for based on what's on file. This may be worth a second look if your details change, or reach out below and we'll help you dig further.";
     container.appendChild(p);
   }
 
@@ -186,40 +177,14 @@ function renderResults(results) {
       container.appendChild(buildResultCard(r, 'likelyMatch'));
     }
   }
-
-  if (needsMoreInfo.length) {
-    const heading = document.createElement('h2');
-    heading.className = 'results-section-heading';
-    heading.textContent = 'Other programs — insufficient information';
-    container.appendChild(heading);
-
-    const intro = document.createElement('p');
-    intro.className = 'needs-review-intro';
-    intro.textContent = "Based on what's on file, these don't currently look like a fit, and some details couldn't be confirmed either. Unlikely to be worth pursuing unless your situation changes.";
-    container.appendChild(intro);
-
-    for (const r of needsMoreInfo) {
-      container.appendChild(buildResultCard(r, 'needsMoreInfo'));
-    }
-  }
-
-  for (const r of nonMatches) {
-    container.appendChild(buildResultCard(r, 'noMatch'));
-  }
 }
 
 function buildResultCard(result, status) {
   const card = document.createElement('div');
-  card.className = 'result-card ' + (
-    status === 'match' ? 'match' :
-    status === 'likelyMatch' ? 'likely-match' :
-    status === 'needsMoreInfo' ? 'needs-review' : 'no-match'
-  );
+  card.className = 'result-card ' + (status === 'likelyMatch' ? 'likely-match' : 'match');
 
   const title = document.createElement('h3');
-  const icon = (status === 'match' || status === 'likelyMatch') ? '\u2713 ' :
-    status === 'needsMoreInfo' ? '\u26A0 ' : '';
-  title.textContent = icon + result.program.name;
+  title.textContent = '\u2713 ' + result.program.name;
   card.appendChild(title);
 
   // Rate-only programs (e.g. IHCDA Step Down) provide no down
@@ -237,12 +202,9 @@ function buildResultCard(result, status) {
   desc.textContent = result.program.description || '';
   card.appendChild(desc);
 
-  if (result.unmetReasons.length) {
-    const reasons = document.createElement('p');
-    reasons.className = 'unmet-reasons';
-    reasons.textContent = 'Not currently eligible: ' + result.unmetReasons.join('; ');
-    card.appendChild(reasons);
-  }
+  // unmetReasons is always empty on anything reaching this function
+  // (see renderResults above) -- no longer rendered here. If that
+  // invariant ever changes, this needs to come back.
 
   if (result.needsVerification.length) {
     const verify = document.createElement('p');

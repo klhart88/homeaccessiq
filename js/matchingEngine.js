@@ -62,6 +62,23 @@ export async function matchProgramsForBuyer(buyerProfile) {
   for (const program of programs) {
     const rules = await fetchRulesForProgram(program.id);
     const evaluation = await evaluateRules(rules, buyerProfile);
+
+    // DESIGN DECISION (8/8/26): only surface programs the buyer is either
+    // a confirmed match for, or a plausible match pending verification.
+    // A program with any hard unmet requirement (wrong state, income too
+    // high, wrong occupation, not a first-time buyer, etc.) is excluded
+    // from the results entirely, rather than returned for the UI to show
+    // in an "Other programs" section. Decided explicitly rather than
+    // resolved silently, per the curation strategy's rule for structural
+    // choices: at national scale (~2,700 programs), returning every
+    // non-match with its failure reason would flood buyers with
+    // irrelevant results instead of surfacing what's actually worth
+    // their time. Everything in `results` from this point on will always
+    // have unmetReasons.length === 0 -- isMatch is therefore always true
+    // for returned items; needsVerification is what distinguishes a
+    // confirmed match from a pending-verification one.
+    if (evaluation.unmetReasons.length > 0) continue;
+
     results.push({
       program,
       isMatch: evaluation.isMatch,
