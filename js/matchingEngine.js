@@ -20,9 +20,11 @@
 //     since the same AMI% maps to different dollar amounts per county)
 //
 //   geographic_scope:
-//     { scope_level: 'state'|'county'|'city', allowed_values: [...] }
+//     { scope_level: 'state'|'county'|'city'|'census_tract', allowed_values: [...] }
 //     (designated_zone/geofence scope is NOT handled yet — flagged
-//     in evaluateGeographicScope as needsVerification)
+//     in evaluateGeographicScope as needsVerification. census_tract
+//     added 8/9/26 for KY's MRB program; purchase-side only, no
+//     residence_census_tract column exists.)
 //
 //   occupation_membership:
 //     { allowed_tags: [...matches occupation_taxonomy.tag], match_mode: 'any_of' }
@@ -300,18 +302,30 @@ function evaluateGeographicScope(config, buyer) {
   // (e.g. Miami-Dade's own county DPA) instead require CURRENT residency
   // in the county at time of application -- discovered curating real data,
   // not anticipated in the original rule shape.
+  //
+  // census_tract added 8/9/26: needed for KY's MRB program, where a
+  // tract-level geographic_scope rule exempts the first-time-buyer
+  // requirement (unlike IHCDA, where tract-level targeting only
+  // caveats income/price via targetedTractCaveat -- KY's tract-level
+  // targeting does double duty). Before this, scope_level:
+  // 'census_tract' would silently resolve buyerValue to undefined,
+  // making the rule always fail -- and if used as an exemption
+  // source, the exemption would never fire. Purchase-side only, same
+  // as 'city' above -- there's no residence_census_tract column.
   const locationField = config.location_field || 'purchase';
 
   const buyerValue = locationField === 'residence'
     ? {
         state: buyer.residence_state,
         county: buyer.residence_county_fips,
-        city: null // residence city isn't captured on buyer_profiles yet
+        city: null, // residence city isn't captured on buyer_profiles yet
+        census_tract: null // no residence_census_tract column exists
       }[config.scope_level]
     : {
         state: buyer.purchase_state,
         county: buyer.purchase_county_fips,
-        city: buyer.purchase_city
+        city: buyer.purchase_city,
+        census_tract: buyer.purchase_census_tract
       }[config.scope_level];
 
   const passed = (config.allowed_values || []).includes(buyerValue);
