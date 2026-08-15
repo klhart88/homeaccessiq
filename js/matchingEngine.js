@@ -283,7 +283,7 @@ function evaluateBuyerStatus(config, buyer) {
 
 function evaluateOccupationMembership(config, buyer) {
   // 'veteran' is a reserved tag (added 8/14/26): if a program's
-  // allowed_tags includes it, a buyer with veteranStatus=true satisfies
+  // allowed_tags includes it, a buyer with veteran_status=true satisfies
   // it directly -- no occupation_tag dropdown selection required. Built
   // this way because the matching engine only AND's rules together
   // (never ORs across rule rows), so a program needing "veteran OR
@@ -294,7 +294,7 @@ function evaluateOccupationMembership(config, buyer) {
   // behavior for free by just including 'veteran' in allowed_tags -- no
   // new rule_type or cross-rule OR mechanism needed.
   //
-  // Note: buyer_profiles' single veteranStatus checkbox ("veteran or
+  // Note: buyer_profiles' single veteran_status checkbox ("veteran or
   // active-duty service member") doesn't distinguish active-duty from
   // reserve -- 'veteran' as a tag covers all three categories some
   // state programs (Ohio Heroes) list separately. Do NOT also add
@@ -302,7 +302,15 @@ function evaluateOccupationMembership(config, buyer) {
   // that would invite a buyer to redundantly pick it from the
   // occupation dropdown AND check the box, which is harmless but
   // confusing UI. This checkbox is the only intended path to it.
-  if (config.allowed_tags?.includes('veteran') && buyer.veteranStatus === true) {
+  //
+  // BUG FIXED 8/14/26: initial version checked buyer.veteranStatus
+  // (camelCase) instead of buyer.veteran_status (the actual column,
+  // snake_case -- same convention evaluateBuyerStatus already uses two
+  // functions above). Silently never matched; caught via a live retest
+  // (veteran checkbox checked, no occupation selected, Ohio Heroes
+  // correctly failed to appear) rather than assumed correct from the
+  // code alone.
+  if (config.allowed_tags?.includes('veteran') && buyer.veteran_status === true) {
     return { passed: true, reason: null };
   }
 
