@@ -282,6 +282,30 @@ function evaluateBuyerStatus(config, buyer) {
 }
 
 function evaluateOccupationMembership(config, buyer) {
+  // 'veteran' is a reserved tag (added 8/14/26): if a program's
+  // allowed_tags includes it, a buyer with veteranStatus=true satisfies
+  // it directly -- no occupation_tag dropdown selection required. Built
+  // this way because the matching engine only AND's rules together
+  // (never ORs across rule rows), so a program needing "veteran OR
+  // [occupation list]" (e.g. Ohio Heroes) can't express that as a
+  // separate buyer_status rule alongside this one -- both would have to
+  // pass, which is wrong. Putting it inside this function as a reserved
+  // tag means any future state's occupation-based rule gets the same
+  // behavior for free by just including 'veteran' in allowed_tags -- no
+  // new rule_type or cross-rule OR mechanism needed.
+  //
+  // Note: buyer_profiles' single veteranStatus checkbox ("veteran or
+  // active-duty service member") doesn't distinguish active-duty from
+  // reserve -- 'veteran' as a tag covers all three categories some
+  // state programs (Ohio Heroes) list separately. Do NOT also add
+  // 'veteran' as a real occupation_taxonomy row/dropdown option --
+  // that would invite a buyer to redundantly pick it from the
+  // occupation dropdown AND check the box, which is harmless but
+  // confusing UI. This checkbox is the only intended path to it.
+  if (config.allowed_tags?.includes('veteran') && buyer.veteranStatus === true) {
+    return { passed: true, reason: null };
+  }
+
   if (!buyer.occupation_tag) {
     return { passed: false, reason: 'No occupation on file' };
   }
