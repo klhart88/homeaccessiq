@@ -47,6 +47,18 @@
 //     (value is used directly for credit_score/dti_ratio; for
 //     purchase_price_cap, lookup_table is used instead, same
 //     reasoning as income_threshold above)
+//
+//   external_verification:
+//     { message: '<free text>' }
+//     Added 8/14/26 for HUD Good Neighbor Next Door. Always surfaces
+//     as a needsVerification note, regardless of buyer data --
+//     narrowly for cases where eligibility itself is fully computable
+//     (no ambiguity) but something outside the app needs checking
+//     before it's actionable (e.g. live property inventory). NOT a
+//     substitute for program_requirements (education_course /
+//     approved_lender_only / proof_document) -- that table exists in
+//     the schema but still isn't wired into the matching engine or UI
+//     at all, a real gap deliberately deferred, not solved by this.
 // ============================================
 
 import { supabaseClient } from './supabaseClient.js';
@@ -260,6 +272,9 @@ async function evaluateSingleRule(rule, buyerProfile) {
     case 'employer_criteria':
       return evaluateEmployerCriteria(config, buyerProfile);
 
+    case 'external_verification':
+      return evaluateExternalVerification(config, buyerProfile);
+
     default:
       return { passed: false, reason: `Unknown rule_type: ${rule.rule_type}` };
   }
@@ -279,6 +294,32 @@ function evaluateBuyerStatus(config, buyer) {
     passed: !!value,
     reason: value ? null : `Requires ${config.status_required.replace(/_/g, ' ')}`
   };
+}
+
+// Added 8/14/26 for HUD Good Neighbor Next Door, the first program whose
+// uncertainty isn't about eligibility (occupation/state ARE fully
+// computable, no ambiguity) but about something else entirely -- GNND's
+// case is live property availability, which changes weekly and can't be
+// represented as a static eligibility fact. Rather than force this
+// through targetedTractCaveat() (which is specifically about
+// income/price uncertainty and would show wrong/misleading text here)
+// or leave it unhandled, this is a small generic escape hatch: any
+// program can attach a rule_type: 'external_verification' row with a
+// fixed config.message, and it will always surface as a
+// needsVerification note (per evaluateRules' aggregation logic, which
+// checks needsVerification before passed and never lets this
+// contribute to unmetReasons) without touching buyer data at all.
+//
+// This is NOT the same as program_requirements (education_course /
+// approved_lender_only / proof_document, schema table exists but isn't
+// wired into the matching engine or UI at all as of 8/14/26) -- that's
+// still a real, larger gap, deliberately deferred rather than solved
+// here. This rule_type is specifically for "eligibility is computable
+// with certainty, but something outside the app needs checking before
+// this is actionable" -- a narrower, cheaper case that GNND happens to
+// fit.
+function evaluateExternalVerification(config, buyer) {
+  return { passed: false, needsVerification: config.message };
 }
 
 function evaluateOccupationMembership(config, buyer) {
