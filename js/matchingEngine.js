@@ -556,7 +556,9 @@ async function evaluateIncomeThreshold(config, buyer) {
   );
 
   if (limit == null) {
-    return { passed: false, needsVerification: `No income limit found for ${config.lookup_table} in this county` };
+    const fallbackMessage = config.fallback_message
+      || `We don't have income limit data on file for this specific county yet — check with the program administrator to confirm your eligibility.`;
+    return { passed: false, needsVerification: fallbackMessage };
   }
 
   const passed = config.comparator === 'gte' ? buyerIncome >= limit : buyerIncome <= limit;
