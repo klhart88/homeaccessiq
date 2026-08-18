@@ -53,16 +53,32 @@ export async function geocodeAddress(rawAddress) {
     throw new Error('Please enter an address to search.');
   }
 
-  // Check cache first — geocode results are non-sensitive
-  // reference data, safe to cache per the PII boundary in cache.js
-  const cacheKey = `geo:${address.toLowerCase()}`;
+  // Nominatim geocodes buildings and street segments, not individual
+  // units -- apartment/suite/unit numbers in the query often cause
+  // zero results even when the underlying street address is valid
+  // and geocodable on its own (confirmed 8/18/26: "484 Convent Ave
+  // #54" failed, "11 Saint Nicholas Ave" -- same city, no unit --
+  // succeeded). This app only ever uses geocoding to resolve
+  // state/county/census-tract, all of which are building-level, not
+  // unit-level, so stripping the unit designator loses no precision
+  // that matters here.
+  const geocodingAddress = address.replace(
+    /[,\s]*(#|apt\.?|apartment|unit|ste\.?|suite)\s*\S+/gi,
+    ''
+  ).trim();
+
+  // Cache key is based on the stripped address, not the raw one --
+  // different units in the same building resolve to the same
+  // state/county/tract data, so they should share one cache entry
+  // rather than each triggering a separate geocode call.
+  const cacheKey = `geo:${geocodingAddress.toLowerCase()}`;
   const cached = cacheGet(cacheKey);
   if (cached) {
     return cached;
   }
 
   const params = new URLSearchParams({
-    q: address,
+    q: geocodingAddress,
     format: 'json',
     addressdetails: '1',
     countrycodes: 'us',
