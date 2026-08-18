@@ -401,7 +401,9 @@ function evaluateGeographicScope(config, buyer) {
         census_tract: buyer.purchase_census_tract
       }[config.scope_level];
 
-  const passed = (config.allowed_values || []).includes(buyerValue);
+  const excluded = (config.excluded_values || []).includes(buyerValue);
+  const included = config.allowed_values ? config.allowed_values.includes(buyerValue) : true;
+  const passed = included && !excluded;
   const locationLabel = locationField === 'residence' ? 'residence' : 'purchase location';
   return { passed, reason: passed ? null : `${locationLabel} outside program's ${config.scope_level} scope` };
 }
