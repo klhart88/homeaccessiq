@@ -275,9 +275,35 @@ async function evaluateSingleRule(rule, buyerProfile) {
     case 'external_verification':
       return evaluateExternalVerification(config, buyerProfile);
 
+    case 'property_attribute':
+      return evaluatePropertyAttribute(config, buyerProfile);
+
+    case 'graduation_window':
+      return evaluateGraduationWindow(config, buyerProfile);
+
     default:
       return { passed: false, reason: `Unknown rule_type: ${rule.rule_type}` };
   }
+}
+
+function evaluatePropertyAttribute(config, buyer) {
+  const buyerValue = buyer[config.field];
+  if (buyerValue == null) {
+    return { passed: false, needsVerification: `We don't have information on file about whether this property is ${config.field.replace(/_/g, ' ')} -- confirm with the program administrator.` };
+  }
+  const passed = buyerValue === config.value;
+  return { passed, reason: passed ? null : `Property does not meet the program's ${config.field.replace(/_/g, ' ')} requirement` };
+}
+
+function evaluateGraduationWindow(config, buyer) {
+  if (!buyer.graduation_date) {
+    return { passed: false, needsVerification: 'Graduation date not on file -- required to determine eligibility for this program.' };
+  }
+  const gradDate = new Date(buyer.graduation_date);
+  const now = new Date();
+  const monthsSinceGrad = (now.getFullYear() - gradDate.getFullYear()) * 12 + (now.getMonth() - gradDate.getMonth());
+  const passed = monthsSinceGrad >= 0 && monthsSinceGrad <= config.months;
+  return { passed, reason: passed ? null : `Graduation was more than ${config.months} months ago` };
 }
 
 function evaluateBuyerStatus(config, buyer) {
