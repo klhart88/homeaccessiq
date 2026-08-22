@@ -95,7 +95,9 @@ document.getElementById('submit-profile-btn').addEventListener('click', async ()
     employerIsHospitalPosition: document.getElementById('employer-is-hospital').checked,
     creditScore: numOrNull('credit-score'),
     dtiRatio: percentToDecimalOrNull('dti-ratio'),
-    targetPurchasePrice: numOrNull('target-price')
+    targetPurchasePrice: numOrNull('target-price'),
+    isNewConstruction: document.getElementById('new-construction').checked,
+    graduationDate: document.getElementById('graduation-date').value || null
   };
 
   try {

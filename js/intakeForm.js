@@ -77,6 +77,8 @@ export async function saveBuyerProfile(formData, locations) {
     credit_score: formData.creditScore || null,
     dti_ratio: formData.dtiRatio || null,
     target_purchase_price: formData.targetPurchasePrice || null,
+    is_new_construction: formData.isNewConstruction || false,
+    graduation_date: formData.graduationDate || null,
 
     is_first_time_buyer: formData.isFirstTimeBuyer,
     occupation_tag: formData.occupationTag || null,
